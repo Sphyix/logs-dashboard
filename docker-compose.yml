@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: logs-dashboard-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: logs_dashboard
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - logs-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: logs-dashboard-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/logs_dashboard
+      - SECRET_KEY=dev-secret-key-please-change-in-production-super-secret-12345
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=10080
+      - API_V1_STR=/api
+      - PROJECT_NAME=Logs Dashboard API
+      - BACKEND_CORS_ORIGINS=["http://localhost", "http://localhost:5173", "http://localhost:3000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - logs-network
+    volumes:
+      - ./backend:/app
+    command: ./entrypoint.sh
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: logs-dashboard-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - logs-network
+
+networks:
+  logs-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
