@@ -4,7 +4,7 @@ Generates sample log data for testing and development
 """
 import random
 from datetime import datetime, timedelta
-from app.database import SessionLocal
+from app.database import SessionLocal, init_db
 from app.models.log import Log, SeverityEnum
 from app.models.user import User
 from app.core.security import get_password_hash
@@ -140,6 +140,7 @@ def seed_database():
 
     try:
         print("=== Starting Database Seeding ===")
+        init_db()
 
         # Create sample user
         create_sample_user(db)

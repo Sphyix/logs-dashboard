@@ -1,6 +1,7 @@
 from typing import Generator, Optional
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthCredentials
+from fastapi.security import HTTPBearer
+from fastapi.security.http import HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 
@@ -22,7 +23,7 @@ def get_db() -> Generator:
 
 
 def get_current_user(
-    credentials: Optional[HTTPAuthCredentials] = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: Session = Depends(get_db)
 ) -> Optional[User]:
     """

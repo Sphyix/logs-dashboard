@@ -20,6 +20,21 @@ services:
     networks:
       - logs-network
 
+  postgres-setup:
+    image: postgres:15-alpine
+    container_name: logs-dashboard-db-setup
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: postgres
+    volumes:
+      - ./backend/db/setup:/scripts:ro
+    command: >
+      sh -c "psql -h postgres -U postgres -d logs_dashboard -f /scripts/setup.sql"
+    networks:
+      - logs-network
+
   backend:
     build:
       context: ./backend
@@ -38,6 +53,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      postgres-setup:
+        condition: service_completed_successfully
     networks:
       - logs-network
     volumes:
