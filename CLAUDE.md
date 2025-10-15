@@ -72,9 +72,11 @@ docker-compose restart backend    # Restart backend
 - **Models** (`app/models/`): SQLAlchemy 2.0 ORM models (User, Log with SeverityEnum)
 - **Schemas** (`app/schemas/`): Pydantic v2 request/response validation models
 - **CRUD** (`app/crud/`): Database operations abstraction layer
-- **Database** (`app/database.py`): SQLAlchemy engine, SessionLocal factory
+- **Database** (`app/database.py`): SQLAlchemy engine, SessionLocal factory, `init_db()` function
 
 The backend follows a layered architecture: API routes → dependencies/auth → CRUD operations → SQLAlchemy models → PostgreSQL. All database operations go through CRUD functions, never direct model manipulation in routes.
+
+**Database Initialization**: The `init_db()` function in `app/database.py` creates all tables using SQLAlchemy metadata. This is called by the seed script and can be used for testing. The Docker setup includes a `postgres-setup` service that automatically installs the pg_trgm extension via `backend/db/setup/setup.sql` before the backend starts.
 
 ### Frontend Structure
 
@@ -158,7 +160,7 @@ Logs support fuzzy full-text search via PostgreSQL pg_trgm extension. The `idx_l
 - 1000 sample logs spanning 30 days with realistic messages
 - Weighted severity distribution (40% INFO, 30% WARNING, 15% ERROR, etc.)
 
-Run after migrations: `alembic upgrade head && python seed.py`
+The seed script calls `init_db()` from `app.database` to ensure tables exist before seeding. Run after migrations: `alembic upgrade head && python seed.py`. In Docker, this runs automatically via `entrypoint.sh`.
 
 ## Environment Configuration
 
@@ -234,6 +236,6 @@ The `current_user` parameter provides access to the authenticated user object.
 
 **Alembic migrations fail**: Check `alembic.ini` has correct database URL (or use DATABASE_URL env var). Ensure models are imported in `alembic/env.py`.
 
-**Full-text search slow**: Verify pg_trgm extension is installed (`CREATE EXTENSION pg_trgm;`) and GIN index exists on logs.message.
+**Full-text search slow**: Verify pg_trgm extension is installed and GIN index exists on logs.message. Docker setup automatically installs the extension via the `postgres-setup` service. For local development, manually run: `CREATE EXTENSION IF NOT EXISTS pg_trgm;`
 
 **JWT token expired**: Tokens last 7 days by default. Clear localStorage and re-login, or adjust ACCESS_TOKEN_EXPIRE_MINUTES.
