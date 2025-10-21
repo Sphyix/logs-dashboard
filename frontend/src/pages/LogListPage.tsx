@@ -54,12 +54,12 @@ export default function LogListPage() {
     queryFn: () => logsAPI.getList(filters),
   })
 
-  // Track new logs when data changes
+  // Track new logs when data changes (for flash animation and count tracking)
   useEffect(() => {
     if (data && filters.page === 1 && filters.sort_order === 'desc') {
       const currentIds = new Set(data.items.map(log => log.id))
 
-      // Find new log IDs
+      // Find new log IDs for flash animation
       const newIds = new Set<string>()
       data.items.forEach(log => {
         if (!previousLogIds.has(log.id)) {
@@ -70,11 +70,6 @@ export default function LogListPage() {
       if (newIds.size > 0) {
         setNewLogIds(newIds)
 
-        // Only show notification if not at top
-        if (!isAtTop()) {
-          setNewLogsCount(newIds.size)
-        }
-
         // Clear animation after 1 second
         setTimeout(() => {
           setNewLogIds(new Set())
@@ -83,13 +78,7 @@ export default function LogListPage() {
 
       setPreviousLogIds(currentIds)
 
-      // Track total count changes
-      if (previousCount !== null && data.total > previousCount) {
-        const diff = data.total - previousCount
-        if (!isAtTop()) {
-          setNewLogsCount(diff)
-        }
-      }
+      // Update previousCount to current total
       setPreviousCount(data.total)
     }
   }, [data])
@@ -111,26 +100,40 @@ export default function LogListPage() {
     return window.scrollY < 100
   }
 
-  // Auto-refresh when at top
+  // Handle SSE count updates
   useEffect(() => {
-    if (sseCountData && isAtTop() && filters.page === 1 && filters.sort_order === 'desc') {
-      // Only refetch if count changed
-      if (previousCount !== null && sseCountData.count !== previousCount) {
-        refetch()
+    if (sseCountData && filters.page === 1 && filters.sort_order === 'desc') {
+      const currentCount = sseCountData.count
+
+      if (previousCount !== null && currentCount > previousCount) {
+        const diff = currentCount - previousCount
+
+        if (isAtTop()) {
+          // At top: auto-refetch to show new logs
+          refetch()
+        } else {
+          // Scrolled down: update badge with difference
+          setNewLogsCount(prev => prev + diff)
+        }
       }
     }
-  }, [sseCountData, refetch])
+  }, [sseCountData, refetch, previousCount, filters.page, filters.sort_order])
 
   // Scroll detection for back-to-top button
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.scrollY
       setShowScrollTop(scrollTop > 300)
+
+      // Reset badge count when scrolling back to top
+      if (scrollTop < 100 && newLogsCount > 0) {
+        setNewLogsCount(0)
+      }
     }
 
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [newLogsCount])
 
   const handleFilterChange = (key: keyof LogFilters, value: any) => {
     setFilters((prev) => ({ ...prev, [key]: value, page: 1 }))
