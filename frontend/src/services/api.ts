@@ -93,4 +93,55 @@ export const analyticsAPI = {
   },
 }
 
+// SSE API - URL builders for EventSource
+export const sseAPI = {
+  getLogsCountUrl: (filters: Omit<LogFilters, 'page' | 'page_size' | 'sort_by' | 'sort_order' | 'search'> & { interval?: number }) => {
+    const params = new URLSearchParams()
+    if (filters.severity) params.append('severity', filters.severity)
+    if (filters.source) params.append('source', filters.source)
+    if (filters.start_date) params.append('start_date', filters.start_date)
+    if (filters.end_date) params.append('end_date', filters.end_date)
+    if (filters.interval) params.append('interval', filters.interval.toString())
+
+    const queryString = params.toString()
+    return `${API_URL}/sse/logs/count${queryString ? '?' + queryString : ''}`
+  },
+
+  getAggregatedUrl: (filters: Omit<LogFilters, 'page' | 'page_size' | 'sort_by' | 'sort_order' | 'search'> & { interval?: number }) => {
+    const params = new URLSearchParams()
+    if (filters.severity) params.append('severity', filters.severity)
+    if (filters.source) params.append('source', filters.source)
+    if (filters.start_date) params.append('start_date', filters.start_date)
+    if (filters.end_date) params.append('end_date', filters.end_date)
+    if (filters.interval) params.append('interval', filters.interval.toString())
+
+    const queryString = params.toString()
+    return `${API_URL}/sse/analytics/aggregated${queryString ? '?' + queryString : ''}`
+  },
+
+  getTrendUrl: (filters: Omit<LogFilters, 'page' | 'page_size' | 'sort_by' | 'sort_order' | 'search'> & { trend_interval?: string; update_interval?: number }) => {
+    const params = new URLSearchParams()
+    if (filters.severity) params.append('severity', filters.severity)
+    if (filters.source) params.append('source', filters.source)
+    if (filters.start_date) params.append('start_date', filters.start_date)
+    if (filters.end_date) params.append('end_date', filters.end_date)
+    if (filters.trend_interval) params.append('trend_interval', filters.trend_interval)
+    if (filters.update_interval) params.append('update_interval', filters.update_interval.toString())
+
+    const queryString = params.toString()
+    return `${API_URL}/sse/analytics/trend${queryString ? '?' + queryString : ''}`
+  },
+
+  getDistributionUrl: (filters: Omit<LogFilters, 'page' | 'page_size' | 'sort_by' | 'sort_order' | 'search' | 'severity'> & { interval?: number }) => {
+    const params = new URLSearchParams()
+    if (filters.source) params.append('source', filters.source)
+    if (filters.start_date) params.append('start_date', filters.start_date)
+    if (filters.end_date) params.append('end_date', filters.end_date)
+    if (filters.interval) params.append('interval', filters.interval.toString())
+
+    const queryString = params.toString()
+    return `${API_URL}/sse/analytics/distribution${queryString ? '?' + queryString : ''}`
+  },
+}
+
 export default api

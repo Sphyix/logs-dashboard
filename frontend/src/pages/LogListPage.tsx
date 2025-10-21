@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -21,15 +21,21 @@ import {
   IconButton,
   Alert,
   CircularProgress,
+  Button,
+  Slide,
 } from '@mui/material'
-import { Visibility } from '@mui/icons-material'
-import { logsAPI } from '../services/api'
-import { Severity, type LogFilters } from '../types'
+import { Visibility, Refresh } from '@mui/icons-material'
+import { logsAPI, sseAPI } from '../services/api'
+import { Severity, type LogFilters, type LogListResponse } from '../types'
 import { format } from 'date-fns'
 import { getSeverityChipStyle } from '../constants/styles'
+import { useSSE } from '../hooks/useSSE'
 
 export default function LogListPage() {
   const navigate = useNavigate()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const filtersRef = useRef<HTMLDivElement>(null)
+
   const [filters, setFilters] = useState<LogFilters>({
     page: 1,
     page_size: 50,
@@ -37,17 +43,79 @@ export default function LogListPage() {
     sort_order: 'desc',
   })
 
-  const { data, isLoading, error } = useQuery({
+  const [isFiltersSticky, setIsFiltersSticky] = useState(false)
+  const [newLogsCount, setNewLogsCount] = useState(0)
+  const [previousCount, setPreviousCount] = useState<number | null>(null)
+
+  const { data, isLoading, error, refetch } = useQuery<LogListResponse>({
     queryKey: ['logs', filters],
     queryFn: () => logsAPI.getList(filters),
   })
 
+  // Track new logs when data changes
+  useEffect(() => {
+    if (data && filters.page === 1 && filters.sort_order === 'desc') {
+      if (previousCount !== null && data.total > previousCount) {
+        const diff = data.total - previousCount
+        if (!isAtTop()) {
+          setNewLogsCount(diff)
+        }
+      }
+      setPreviousCount(data.total)
+    }
+  }, [data])
+
+  // SSE connection for log count updates
+  const { data: sseCountData } = useSSE<{ count: number }>({
+    url: sseAPI.getLogsCountUrl({
+      severity: filters.severity,
+      source: filters.source,
+      start_date: filters.start_date,
+      end_date: filters.end_date,
+      interval: 3,
+    }),
+    enabled: true,
+  })
+
+  // Detect if user is at the top of the page
+  const isAtTop = () => {
+    return window.scrollY < 100
+  }
+
+  // Auto-refresh when at top
+  useEffect(() => {
+    if (sseCountData && isAtTop() && filters.page === 1 && filters.sort_order === 'desc') {
+      // Only refetch if count changed
+      if (previousCount !== null && sseCountData.count !== previousCount) {
+        refetch()
+      }
+    }
+  }, [sseCountData, refetch])
+
+  // Scroll detection for sticky filters
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY
+
+      if (filtersRef.current) {
+        const filtersTop = filtersRef.current.offsetTop
+        setIsFiltersSticky(scrollTop > filtersTop - 20)
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   const handleFilterChange = (key: keyof LogFilters, value: any) => {
     setFilters((prev) => ({ ...prev, [key]: value, page: 1 }))
+    setNewLogsCount(0)
   }
 
   const handlePageChange = (_: unknown, newPage: number) => {
     setFilters((prev) => ({ ...prev, page: newPage + 1 }))
+    setNewLogsCount(0)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,6 +124,13 @@ export default function LogListPage() {
       page_size: parseInt(event.target.value, 10),
       page: 1,
     }))
+    setNewLogsCount(0)
+  }
+
+  const handleRefreshClick = () => {
+    refetch()
+    setNewLogsCount(0)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   if (error) {
@@ -63,10 +138,49 @@ export default function LogListPage() {
   }
 
   return (
-    <Box>
+    <Box ref={containerRef}>
       <Typography variant="h4" mb={3}>Logs</Typography>
 
-      <Paper sx={{ p: 2, mb: 2 }}>
+      {/* New logs notification banner */}
+      <Slide direction="down" in={newLogsCount > 0} mountOnEnter unmountOnExit>
+        <Alert
+          severity="info"
+          action={
+            <Button color="inherit" size="small" onClick={handleRefreshClick} startIcon={<Refresh />}>
+              Load {newLogsCount} New {newLogsCount === 1 ? 'Log' : 'Logs'}
+            </Button>
+          }
+          sx={{
+            mb: 2,
+            position: isFiltersSticky ? 'fixed' : 'relative',
+            top: isFiltersSticky ? 64 : 'auto',
+            left: isFiltersSticky ? 0 : 'auto',
+            right: isFiltersSticky ? 0 : 'auto',
+            zIndex: isFiltersSticky ? 1100 : 'auto',
+            mx: isFiltersSticky ? 2 : 0,
+          }}
+        >
+          {newLogsCount} new {newLogsCount === 1 ? 'log' : 'logs'} available
+        </Alert>
+      </Slide>
+
+      {/* Filters - sticky when scrolling */}
+      <Paper
+        ref={filtersRef}
+        sx={{
+          p: 2,
+          mb: 2,
+          position: isFiltersSticky ? 'fixed' : 'relative',
+          top: isFiltersSticky ? (newLogsCount > 0 ? 128 : 64) : 'auto',
+          left: isFiltersSticky ? 0 : 'auto',
+          right: isFiltersSticky ? 0 : 'auto',
+          zIndex: isFiltersSticky ? 1000 : 'auto',
+          boxShadow: isFiltersSticky ? 4 : 1,
+          mx: isFiltersSticky ? 2 : 0,
+          borderRadius: isFiltersSticky ? 2 : 1,
+          bgcolor: 'background.paper',
+        }}
+      >
         <Box display="flex" gap={2} flexWrap="wrap">
           <TextField
             label="Search"
@@ -129,6 +243,9 @@ export default function LogListPage() {
           </FormControl>
         </Box>
       </Paper>
+
+      {/* Spacer to prevent content jump when filters become sticky */}
+      {isFiltersSticky && <Box sx={{ height: 80 }} />}
 
       {isLoading ? (
         <Box display="flex" justifyContent="center" p={4}>

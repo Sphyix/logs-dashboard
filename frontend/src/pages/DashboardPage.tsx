@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Box,
@@ -13,6 +13,7 @@ import {
   MenuItem,
   CircularProgress,
   TextField,
+  Chip,
 } from '@mui/material'
 import {
   Chart as ChartJS,
@@ -27,10 +28,11 @@ import {
   ArcElement,
 } from 'chart.js'
 import { Line, Bar, Pie } from 'react-chartjs-2'
-import { analyticsAPI } from '../services/api'
-import { Severity } from '../types'
+import { analyticsAPI, sseAPI } from '../services/api'
+import { Severity, AggregatedData, TrendData, DistributionData } from '../types'
 import { format, subDays } from 'date-fns'
 import { getSeverityColors, sortBySeverity } from '../constants/styles'
+import { useSSE } from '../hooks/useSSE'
 
 // Register ChartJS components
 ChartJS.register(
@@ -54,7 +56,13 @@ export default function DashboardPage() {
     interval: 'hour',
   })
 
-  const { data: aggregated, isLoading: aggregatedLoading } = useQuery({
+  // State for real-time data
+  const [aggregated, setAggregated] = useState<AggregatedData | null>(null)
+  const [trend, setTrend] = useState<TrendData | null>(null)
+  const [distribution, setDistribution] = useState<DistributionData | null>(null)
+
+  // Initial data fetch using React Query
+  const { data: aggregatedData, isLoading: aggregatedLoading } = useQuery({
     queryKey: ['analytics', 'aggregated', filters],
     queryFn: () => analyticsAPI.getAggregated({
       severity: filters.severity,
@@ -64,7 +72,7 @@ export default function DashboardPage() {
     }),
   })
 
-  const { data: trend, isLoading: trendLoading } = useQuery({
+  const { data: trendData, isLoading: trendLoading } = useQuery({
     queryKey: ['analytics', 'trend', filters],
     queryFn: () => analyticsAPI.getTrend({
       severity: filters.severity,
@@ -75,7 +83,7 @@ export default function DashboardPage() {
     }),
   })
 
-  const { data: distribution, isLoading: distributionLoading } = useQuery({
+  const { data: distributionData, isLoading: distributionLoading } = useQuery({
     queryKey: ['analytics', 'distribution', filters],
     queryFn: () => analyticsAPI.getDistribution({
       source: filters.source,
@@ -84,7 +92,68 @@ export default function DashboardPage() {
     }),
   })
 
+  // Update state when initial data is loaded
+  useEffect(() => {
+    if (aggregatedData) setAggregated(aggregatedData)
+  }, [aggregatedData])
+
+  useEffect(() => {
+    if (trendData) setTrend(trendData)
+  }, [trendData])
+
+  useEffect(() => {
+    if (distributionData) setDistribution(distributionData)
+  }, [distributionData])
+
+  // SSE connections for real-time updates
+  const { isConnected: aggregatedConnected } = useSSE<AggregatedData>({
+    url: sseAPI.getAggregatedUrl({
+      severity: filters.severity,
+      source: filters.source,
+      start_date: filters.start_date,
+      end_date: filters.end_date,
+      interval: 5,
+    }),
+    enabled: !aggregatedLoading,
+    onMessage: (data) => {
+      // Remove timestamp field before setting
+      const { timestamp, ...cleanData } = data
+      setAggregated(cleanData as AggregatedData)
+    },
+  })
+
+  const { isConnected: trendConnected } = useSSE<TrendData>({
+    url: sseAPI.getTrendUrl({
+      severity: filters.severity,
+      source: filters.source,
+      start_date: filters.start_date,
+      end_date: filters.end_date,
+      trend_interval: filters.interval,
+      update_interval: 5,
+    }),
+    enabled: !trendLoading,
+    onMessage: (data) => {
+      const { timestamp, ...cleanData } = data
+      setTrend(cleanData as TrendData)
+    },
+  })
+
+  const { isConnected: distributionConnected } = useSSE<DistributionData>({
+    url: sseAPI.getDistributionUrl({
+      source: filters.source,
+      start_date: filters.start_date,
+      end_date: filters.end_date,
+      interval: 5,
+    }),
+    enabled: !distributionLoading,
+    onMessage: (data) => {
+      const { timestamp, ...cleanData } = data
+      setDistribution(cleanData as DistributionData)
+    },
+  })
+
   const isLoading = aggregatedLoading || trendLoading || distributionLoading
+  const allConnected = aggregatedConnected && trendConnected && distributionConnected
 
   // Trend chart data
   const trendChartData = {
@@ -131,9 +200,19 @@ export default function DashboardPage() {
 
       {/* Filters */}
       <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography variant="h6" mb={2}>
-          Filters
-        </Typography>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Typography variant="h6">
+            Filters
+          </Typography>
+          {allConnected && (
+            <Chip
+              label="Live Updates"
+              color="success"
+              size="small"
+              sx={{ animation: 'pulse 2s ease-in-out infinite', '@keyframes pulse': { '0%, 100%': { opacity: 1 }, '50%': { opacity: 0.7 } } }}
+            />
+          )}
+        </Box>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6} md={3}>
             <TextField

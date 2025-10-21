@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.api import auth, logs, analytics
+from app.api import auth, logs, analytics, sse
 from app.database import Base, engine
 
 # Create database tables
@@ -28,6 +28,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(logs.router, prefix=settings.API_V1_STR)
 app.include_router(analytics.router, prefix=settings.API_V1_STR)
+app.include_router(sse.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")
