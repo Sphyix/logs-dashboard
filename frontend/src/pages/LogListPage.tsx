@@ -21,10 +21,11 @@ import {
   IconButton,
   Alert,
   CircularProgress,
-  Button,
-  Slide,
+  Fab,
+  Badge,
+  Zoom,
 } from '@mui/material'
-import { Visibility, Refresh } from '@mui/icons-material'
+import { Visibility, KeyboardArrowUp } from '@mui/icons-material'
 import { logsAPI, sseAPI } from '../services/api'
 import { Severity, type LogFilters, type LogListResponse } from '../types'
 import { format } from 'date-fns'
@@ -34,7 +35,6 @@ import { useSSE } from '../hooks/useSSE'
 export default function LogListPage() {
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
-  const filtersRef = useRef<HTMLDivElement>(null)
 
   const [filters, setFilters] = useState<LogFilters>({
     page: 1,
@@ -43,7 +43,7 @@ export default function LogListPage() {
     sort_order: 'desc',
   })
 
-  const [isFiltersSticky, setIsFiltersSticky] = useState(false)
+  const [showScrollTop, setShowScrollTop] = useState(false)
   const [newLogsCount, setNewLogsCount] = useState(0)
   const [previousCount, setPreviousCount] = useState<number | null>(null)
   const [previousLogIds, setPreviousLogIds] = useState<Set<string>>(new Set())
@@ -121,15 +121,11 @@ export default function LogListPage() {
     }
   }, [sseCountData, refetch])
 
-  // Scroll detection for sticky filters
+  // Scroll detection for back-to-top button
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.scrollY
-
-      if (filtersRef.current) {
-        const filtersTop = filtersRef.current.offsetTop
-        setIsFiltersSticky(scrollTop > filtersTop - 20)
-      }
+      setShowScrollTop(scrollTop > 300)
     }
 
     window.addEventListener('scroll', handleScroll)
@@ -162,7 +158,7 @@ export default function LogListPage() {
     setNewLogIds(new Set())
   }
 
-  const handleRefreshClick = () => {
+  const handleScrollToTop = () => {
     setNewLogsCount(0)
     setPreviousLogIds(new Set())
     setNewLogIds(new Set())
@@ -178,46 +174,8 @@ export default function LogListPage() {
     <Box ref={containerRef}>
       <Typography variant="h4" mb={3}>Logs</Typography>
 
-      {/* New logs notification banner */}
-      <Slide direction="down" in={newLogsCount > 0} mountOnEnter unmountOnExit>
-        <Alert
-          severity="info"
-          action={
-            <Button color="inherit" size="small" onClick={handleRefreshClick} startIcon={<Refresh />}>
-              Load {newLogsCount} New {newLogsCount === 1 ? 'Log' : 'Logs'}
-            </Button>
-          }
-          sx={{
-            mb: 2,
-            position: isFiltersSticky ? 'fixed' : 'relative',
-            top: isFiltersSticky ? 64 : 'auto',
-            left: isFiltersSticky ? 0 : 'auto',
-            right: isFiltersSticky ? 0 : 'auto',
-            zIndex: isFiltersSticky ? 1100 : 'auto',
-            mx: isFiltersSticky ? 2 : 0,
-          }}
-        >
-          {newLogsCount} new {newLogsCount === 1 ? 'log' : 'logs'} available
-        </Alert>
-      </Slide>
-
-      {/* Filters - sticky when scrolling */}
-      <Paper
-        ref={filtersRef}
-        sx={{
-          p: 2,
-          mb: 2,
-          position: isFiltersSticky ? 'fixed' : 'relative',
-          top: isFiltersSticky ? (newLogsCount > 0 ? 128 : 64) : 'auto',
-          left: isFiltersSticky ? 0 : 'auto',
-          right: isFiltersSticky ? 0 : 'auto',
-          zIndex: isFiltersSticky ? 1000 : 'auto',
-          boxShadow: isFiltersSticky ? 4 : 1,
-          mx: isFiltersSticky ? 2 : 0,
-          borderRadius: isFiltersSticky ? 2 : 1,
-          bgcolor: 'background.paper',
-        }}
-      >
+      {/* Filters */}
+      <Paper sx={{ p: 2, mb: 2 }}>
         <Box display="flex" gap={2} flexWrap="wrap">
           <TextField
             label="Search"
@@ -280,9 +238,6 @@ export default function LogListPage() {
           </FormControl>
         </Box>
       </Paper>
-
-      {/* Spacer to prevent content jump when filters become sticky */}
-      {isFiltersSticky && <Box sx={{ height: 80 }} />}
 
       {isLoading ? (
         <Box display="flex" justifyContent="center" p={4}>
@@ -367,6 +322,39 @@ export default function LogListPage() {
           />
         </>
       )}
+
+      {/* Floating back-to-top button with new logs badge */}
+      <Zoom in={showScrollTop}>
+        <Fab
+          color="primary"
+          size="medium"
+          onClick={handleScrollToTop}
+          sx={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 1000,
+          }}
+        >
+          <Badge
+            badgeContent={newLogsCount}
+            color="success"
+            max={999}
+            sx={{
+              '& .MuiBadge-badge': {
+                fontSize: '0.75rem',
+                height: '20px',
+                minWidth: '20px',
+                backgroundColor: '#4caf50',
+                color: '#fff',
+                fontWeight: 'bold',
+              }
+            }}
+          >
+            <KeyboardArrowUp />
+          </Badge>
+        </Fab>
+      </Zoom>
     </Box>
   )
 }
