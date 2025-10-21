@@ -160,12 +160,12 @@ Password: password123
 
 ### Stop the application
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ### Stop and remove all data
 ```bash
-docker-compose down -v
+docker compose down -v
 ```
 
 ## Development Setup
