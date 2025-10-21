@@ -1,7 +1,20 @@
 import { SxProps, Theme } from '@mui/material'
 import { Severity } from '../types'
 
-// Severity color mapping - consistent across all charts and components
+// Severity ordering
+export const SEVERITY_ORDER = [
+  Severity.INFO, 
+  Severity.WARNING, 
+  Severity.ERROR, 
+  Severity.CRITICAL, 
+  Severity.DEBUG
+]
+
+// Sort items by severity
+export const sortBySeverity = <T extends { label: string }>(items: T[]): T[] =>
+    items.sort((a, b) => SEVERITY_ORDER.indexOf(a.label as Severity) - SEVERITY_ORDER.indexOf(b.label as Severity))
+
+// Severity color mapping
 export const SEVERITY_COLORS: Record<Severity, string> = {
   [Severity.DEBUG]: 'rgba(156, 39, 176, 0.8)',     // Purple
   [Severity.INFO]: 'rgba(33, 150, 243, 0.8)',      // Blue

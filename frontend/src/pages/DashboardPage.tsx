@@ -30,7 +30,7 @@ import { Line, Bar, Pie } from 'react-chartjs-2'
 import { analyticsAPI } from '../services/api'
 import { Severity } from '../types'
 import { format, subDays } from 'date-fns'
-import { getSeverityColors } from '../constants/styles'
+import { getSeverityColors, sortBySeverity } from '../constants/styles'
 
 // Register ChartJS components
 ChartJS.register(
@@ -100,24 +100,25 @@ export default function DashboardPage() {
     ],
   }
 
-  // Distribution chart data
+  const sortedDistribution = sortBySeverity(distribution?.items || [])
+
   const distributionChartData = {
-    labels: distribution?.items.map(d => d.label) || [],
+    labels: sortedDistribution.map(d => d.label),
     datasets: [
       {
         label: 'Count',
-        data: distribution?.items.map(d => d.count) || [],
-        backgroundColor: getSeverityColors(distribution?.items.map(d => d.label) || []),
+        data: sortedDistribution.map(d => d.count),
+        backgroundColor: getSeverityColors(sortedDistribution.map(d => d.label)),
       },
     ],
   }
 
   const pieChartData = {
-    labels: distribution?.items.map(d => d.label) || [],
+    labels: sortedDistribution.map(d => d.label),
     datasets: [
       {
-        data: distribution?.items.map(d => d.count) || [],
-        backgroundColor: getSeverityColors(distribution?.items.map(d => d.label) || []),
+        data: sortedDistribution.map(d => d.count),
+        backgroundColor: getSeverityColors(sortedDistribution.map(d => d.label)),
       },
     ],
   }
