@@ -34,11 +34,6 @@ wheels/
 *.swo
 *~
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-
 # Misc
 *.log
 .DS_Store

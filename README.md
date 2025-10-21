@@ -32,7 +32,6 @@ The Logs Dashboard is a comprehensive log management system that allows users to
   - Protected routes for create/update/delete operations
 
 ### Bonus Features
-- Unit and integration tests (Backend)
 - CSV export functionality
 - Severity distribution histogram
 - Advanced full-text search (PostgreSQL pg_trgm)
@@ -50,7 +49,6 @@ The Logs Dashboard is a comprehensive log management system that allows users to
 - **Pydantic v2** - Data validation
 - **python-jose** - JWT tokens
 - **passlib** - Password hashing
-- **pytest** - Testing framework
 
 ### Frontend
 - **React 18** - UI library
@@ -93,7 +91,6 @@ logs-dashboard/
 │   │   │   └── log.py
 │   │   ├── database.py        # Database connection
 │   │   └── main.py            # FastAPI app
-│   ├── tests/                 # Test files
 │   ├── seed.py                # Database seeding script
 │   ├── requirements.txt
 │   └── Dockerfile
@@ -207,11 +204,6 @@ python seed.py
 6. **Run the development server**
 ```bash
 uvicorn app.main:app --reload --port 8000
-```
-
-8. **Run tests**
-```bash
-pytest
 ```
 
 ### Frontend Development
@@ -335,23 +327,6 @@ See `tools/seeder/README.md` for more details.
 - **Full-text Search**: PostgreSQL native full-text search for efficient message searching
 - **Pagination**: Cursor-based pagination prevents performance issues with large datasets
 
-## Testing
-
-### Backend Tests
-```bash
-cd backend
-pytest                    # Run all tests
-pytest -v                # Verbose output
-pytest --cov=app         # With coverage report
-```
-
-### Frontend Tests
-```bash
-cd frontend
-npm test                 # Run tests
-npm run test:coverage    # With coverage
-```
-
 ## Environment Variables
 
 ### Backend (.env)
@@ -383,8 +358,6 @@ Environment variables are configured in `vite.config.ts` and docker-compose.yml
 - Log aggregation from multiple sources
 
 ### Technical Improvements
-- Frontend component tests
-- E2E tests with Playwright/Cypress
 - Performance monitoring and APM integration
 - Caching layer (Redis)
 - Rate limiting

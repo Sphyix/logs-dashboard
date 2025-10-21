@@ -18,6 +18,7 @@ import {
 } from '@mui/icons-material'
 import { useAuth } from '../context/AuthContext'
 import { useState } from 'react'
+import { getNavButtonStyle } from '../constants/styles'
 
 export default function Layout() {
   const { user, logout, isAuthenticated } = useAuth()
@@ -52,9 +53,7 @@ export default function Layout() {
               color="inherit"
               startIcon={<DashboardIcon />}
               onClick={() => navigate('/dashboard')}
-              sx={{
-                backgroundColor: location.pathname === '/dashboard' ? 'rgba(255,255,255,0.1)' : 'transparent'
-              }}
+              sx={getNavButtonStyle(location.pathname === '/dashboard')}
             >
               Dashboard
             </Button>
@@ -62,9 +61,7 @@ export default function Layout() {
               color="inherit"
               startIcon={<ListIcon />}
               onClick={() => navigate('/logs')}
-              sx={{
-                backgroundColor: location.pathname === '/logs' ? 'rgba(255,255,255,0.1)' : 'transparent'
-              }}
+              sx={getNavButtonStyle(location.pathname === '/logs')}
             >
               Logs
             </Button>

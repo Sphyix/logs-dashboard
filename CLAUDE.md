@@ -23,12 +23,6 @@ uvicorn app.main:app --reload --port 8000
 
 # Database
 python seed.py                    # Initialize and seed database with sample data
-
-# Testing
-pytest                            # Run all tests
-pytest -v                         # Verbose
-pytest --cov=app                  # With coverage
-pytest tests/test_specific.py     # Run specific test file
 ```
 
 ### Frontend (React/TypeScript)
@@ -74,7 +68,7 @@ docker-compose restart backend    # Restart backend
 
 The backend follows a layered architecture: API routes → dependencies/auth → CRUD operations → SQLAlchemy models → PostgreSQL. All database operations go through CRUD functions, never direct model manipulation in routes.
 
-**Database Initialization**: The `init_db()` function in `app/database.py` creates all tables using SQLAlchemy metadata. This is called by the seed script and can be used for testing. The Docker setup includes a `postgres-setup` service that automatically installs the pg_trgm extension via `backend/db/setup/setup.sql` before the backend starts.
+**Database Initialization**: The `init_db()` function in `app/database.py` creates all tables using SQLAlchemy metadata. This is called by the seed script. The Docker setup includes a `postgres-setup` service that automatically installs the pg_trgm extension via `backend/db/setup/setup.sql` before the backend starts.
 
 ### Frontend Structure
 
@@ -151,7 +145,7 @@ The axios instance automatically adds `Bearer {token}` header from localStorage.
 
 Logs support fuzzy full-text search via PostgreSQL pg_trgm extension. The `idx_log_message_gin` index must exist for performance. Search is case-insensitive and matches partial words.
 
-### Seeding & Test Data
+### Seeding & Sample Data
 
 `backend/seed.py` creates:
 - Admin user: admin@example.com / password123
@@ -171,20 +165,6 @@ Frontend uses Vite environment variables:
 - `VITE_API_URL`: Backend API URL (defaults to `/api` for reverse proxy setup)
 
 Docker Compose sets these automatically for containerized deployment.
-
-## Testing Guidelines
-
-Backend tests should:
-- Use pytest fixtures for test database and client
-- Test both authenticated and unauthenticated scenarios
-- Verify RBAC behavior (guests cannot POST/PUT/DELETE)
-- Test filter combinations and edge cases
-- Use `httpx.AsyncClient` for async FastAPI testing
-
-Frontend (when adding tests):
-- Test components with React Testing Library
-- Mock TanStack Query hooks
-- Test auth flows and protected route behavior
 
 ## Common Patterns
 

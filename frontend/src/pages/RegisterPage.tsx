@@ -11,6 +11,7 @@ import {
   Alert,
 } from '@mui/material'
 import { useAuth } from '../context/AuthContext'
+import { authContainerBox, authPaper, authFormBox, authSubmitButton, errorAlert } from '../constants/styles'
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('')
@@ -50,26 +51,19 @@ export default function RegisterPage() {
 
   return (
     <Container component="main" maxWidth="xs">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
-        <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
+      <Box sx={authContainerBox}>
+        <Paper elevation={3} sx={authPaper}>
           <Typography component="h1" variant="h5" align="center" gutterBottom>
             Sign Up
           </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ mt: 2 }}>
+            <Alert severity="error" sx={errorAlert}>
               {error}
             </Alert>
           )}
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
+          <Box component="form" onSubmit={handleSubmit} sx={authFormBox}>
             <TextField
               margin="normal"
               required
@@ -120,7 +114,7 @@ export default function RegisterPage() {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              sx={authSubmitButton}
               disabled={loading}
             >
               {loading ? 'Creating Account...' : 'Sign Up'}
