@@ -22,9 +22,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 
 # Database
-alembic upgrade head              # Run migrations
-alembic revision --autogenerate -m "description"  # Create migration
-python seed.py                    # Seed database with sample data
+python seed.py                    # Initialize and seed database with sample data
 
 # Testing
 pytest                            # Run all tests
@@ -114,7 +112,7 @@ Implementation: `get_current_user` dependency validates JWT token, `require_user
 **Key Patterns**:
 - All models have `created_at` and `updated_at` timestamps
 - Use SQLAlchemy 2.0 style (not legacy 1.x patterns)
-- Alembic migrations for schema changes (never modify models without creating migration)
+- Schema changes require updating models and re-initializing the database
 
 ### API Patterns
 
@@ -160,7 +158,7 @@ Logs support fuzzy full-text search via PostgreSQL pg_trgm extension. The `idx_l
 - 1000 sample logs spanning 30 days with realistic messages
 - Weighted severity distribution (40% INFO, 30% WARNING, 15% ERROR, etc.)
 
-The seed script calls `init_db()` from `app.database` to ensure tables exist before seeding. Run after migrations: `alembic upgrade head && python seed.py`. In Docker, this runs automatically via `entrypoint.sh`.
+The seed script calls `init_db()` from `app.database` to ensure tables exist before seeding. Run with: `python seed.py`. In Docker, this runs automatically via `entrypoint.sh`.
 
 ## Environment Configuration
 
@@ -202,12 +200,10 @@ Frontend (when adding tests):
 ### Database Schema Changes
 
 1. Modify SQLAlchemy model in `app/models/`
-2. Generate migration: `alembic revision --autogenerate -m "description"`
-3. Review generated migration in `backend/alembic/versions/`
-4. Apply migration: `alembic upgrade head`
-5. Update seed script if needed
+2. Update seed script if needed
+3. Re-initialize database by running `python seed.py` (this will recreate tables)
 
-Never skip migrations - docker-compose automatically runs them via `entrypoint.sh`.
+For Docker: restart services with `docker-compose down -v && docker-compose up -d` to recreate the database with the new schema.
 
 ### Adding Authentication to a Route
 
@@ -233,8 +229,6 @@ The `current_user` parameter provides access to the authenticated user object.
 **Database connection issues**: Ensure PostgreSQL is running and DATABASE_URL is correct. Docker users: wait for healthcheck to pass before backend starts.
 
 **Frontend can't reach backend**: Check CORS settings in `backend/.env`. Development: frontend runs on :5173, backend on :8000. Add both to BACKEND_CORS_ORIGINS.
-
-**Alembic migrations fail**: Check `alembic.ini` has correct database URL (or use DATABASE_URL env var). Ensure models are imported in `alembic/env.py`.
 
 **Full-text search slow**: Verify pg_trgm extension is installed and GIN index exists on logs.message. Docker setup automatically installs the extension via the `postgres-setup` service. For local development, manually run: `CREATE EXTENSION IF NOT EXISTS pg_trgm;`
 

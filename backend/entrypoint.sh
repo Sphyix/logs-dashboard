@@ -7,9 +7,6 @@ while ! pg_isready -h postgres -p 5432 > /dev/null 2>&1; do
 done
 echo "PostgreSQL is ready!"
 
-echo "Running database migrations..."
-alembic upgrade head
-
 echo "Seeding database..."
 python seed.py || echo "Database already seeded or seeding failed (continuing...)"
 

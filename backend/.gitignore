@@ -39,10 +39,6 @@ wheels/
 .coverage
 htmlcov/
 
-# Alembic
-alembic/versions/*_*.py
-!alembic/versions/.gitkeep
-
 # Misc
 *.log
 .DS_Store

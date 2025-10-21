@@ -39,7 +39,6 @@ The Logs Dashboard is a comprehensive log management system that allows users to
 - Standalone database seeder tool
 - Docker-ready with docker-compose
 - Auto-generated API documentation (Swagger/OpenAPI)
-- Database migrations with Alembic
 - Responsive Material-UI interface
 
 ## Tech Stack
@@ -47,7 +46,6 @@ The Logs Dashboard is a comprehensive log management system that allows users to
 ### Backend
 - **FastAPI** - Modern, fast Python web framework
 - **SQLAlchemy 2.0** - SQL toolkit and ORM
-- **Alembic** - Database migrations
 - **PostgreSQL 15** - Relational database
 - **Pydantic v2** - Data validation
 - **python-jose** - JWT tokens
@@ -95,7 +93,6 @@ logs-dashboard/
 │   │   │   └── log.py
 │   │   ├── database.py        # Database connection
 │   │   └── main.py            # FastAPI app
-│   ├── alembic/               # Database migrations
 │   ├── tests/                 # Test files
 │   ├── seed.py                # Database seeding script
 │   ├── requirements.txt
@@ -202,17 +199,12 @@ cp .env.example .env
 # Edit .env with your settings
 ```
 
-5. **Run database migrations**
-```bash
-alembic upgrade head
-```
-
-6. **Seed the database**
+5. **Initialize and seed the database**
 ```bash
 python seed.py
 ```
 
-7. **Run the development server**
+6. **Run the development server**
 ```bash
 uvicorn app.main:app --reload --port 8000
 ```
@@ -325,7 +317,6 @@ See `tools/seeder/README.md` for more details.
 ### Backend
 - **FastAPI**: Chosen for auto-generated documentation, async support, and modern Python features
 - **SQLAlchemy**: Industry-standard ORM with excellent PostgreSQL support
-- **Alembic**: Standard migration tool, integrates well with SQLAlchemy
 - **JWT Authentication**: Stateless authentication suitable for REST APIs
 - **PostgreSQL pg_trgm**: Full-text search with fuzzy matching for log messages
 - **Pydantic v2**: Automatic request/response validation and OpenAPI schema generation
