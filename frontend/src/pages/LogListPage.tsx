@@ -46,6 +46,8 @@ export default function LogListPage() {
   const [isFiltersSticky, setIsFiltersSticky] = useState(false)
   const [newLogsCount, setNewLogsCount] = useState(0)
   const [previousCount, setPreviousCount] = useState<number | null>(null)
+  const [previousLogIds, setPreviousLogIds] = useState<Set<string>>(new Set())
+  const [newLogIds, setNewLogIds] = useState<Set<string>>(new Set())
 
   const { data, isLoading, error, refetch } = useQuery<LogListResponse>({
     queryKey: ['logs', filters],
@@ -55,6 +57,33 @@ export default function LogListPage() {
   // Track new logs when data changes
   useEffect(() => {
     if (data && filters.page === 1 && filters.sort_order === 'desc') {
+      const currentIds = new Set(data.items.map(log => log.id))
+
+      // Find new log IDs
+      const newIds = new Set<string>()
+      data.items.forEach(log => {
+        if (!previousLogIds.has(log.id)) {
+          newIds.add(log.id)
+        }
+      })
+
+      if (newIds.size > 0) {
+        setNewLogIds(newIds)
+
+        // Only show notification if not at top
+        if (!isAtTop()) {
+          setNewLogsCount(newIds.size)
+        }
+
+        // Clear animation after 1 second
+        setTimeout(() => {
+          setNewLogIds(new Set())
+        }, 1000)
+      }
+
+      setPreviousLogIds(currentIds)
+
+      // Track total count changes
       if (previousCount !== null && data.total > previousCount) {
         const diff = data.total - previousCount
         if (!isAtTop()) {
@@ -110,11 +139,15 @@ export default function LogListPage() {
   const handleFilterChange = (key: keyof LogFilters, value: any) => {
     setFilters((prev) => ({ ...prev, [key]: value, page: 1 }))
     setNewLogsCount(0)
+    setPreviousLogIds(new Set())
+    setNewLogIds(new Set())
   }
 
   const handlePageChange = (_: unknown, newPage: number) => {
     setFilters((prev) => ({ ...prev, page: newPage + 1 }))
     setNewLogsCount(0)
+    setPreviousLogIds(new Set())
+    setNewLogIds(new Set())
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -125,11 +158,15 @@ export default function LogListPage() {
       page: 1,
     }))
     setNewLogsCount(0)
+    setPreviousLogIds(new Set())
+    setNewLogIds(new Set())
   }
 
   const handleRefreshClick = () => {
-    refetch()
     setNewLogsCount(0)
+    setPreviousLogIds(new Set())
+    setNewLogIds(new Set())
+    refetch()
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -265,32 +302,49 @@ export default function LogListPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {data?.items.map((log) => (
-                  <TableRow key={log.id} hover>
-                    <TableCell>
-                      {format(new Date(log.timestamp), 'MMM dd, yyyy HH:mm:ss')}
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={log.severity}
-                        size="small"
-                        sx={getSeverityChipStyle(log.severity)}
-                      />
-                    </TableCell>
-                    <TableCell>{log.source}</TableCell>
-                    <TableCell sx={{ maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {log.message}
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton
-                        size="small"
-                        onClick={() => navigate(`/logs/${log.id}`)}
-                      >
-                        <Visibility />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {data?.items.map((log) => {
+                  const isNewLog = newLogIds.has(log.id)
+                  return (
+                    <TableRow
+                      key={log.id}
+                      hover
+                      sx={isNewLog ? {
+                        animation: 'flashGreen 1s ease-out',
+                        '@keyframes flashGreen': {
+                          '0%': {
+                            backgroundColor: 'rgba(76, 175, 80, 0.4)',
+                          },
+                          '100%': {
+                            backgroundColor: 'transparent',
+                          },
+                        },
+                      } : {}}
+                    >
+                      <TableCell>
+                        {format(new Date(log.timestamp), 'MMM dd, yyyy HH:mm:ss')}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={log.severity}
+                          size="small"
+                          sx={getSeverityChipStyle(log.severity)}
+                        />
+                      </TableCell>
+                      <TableCell>{log.source}</TableCell>
+                      <TableCell sx={{ maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {log.message}
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton
+                          size="small"
+                          onClick={() => navigate(`/logs/${log.id}`)}
+                        >
+                          <Visibility />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
                 {data?.items.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} align="center">
