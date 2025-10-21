@@ -1,8 +1,37 @@
 import { SxProps, Theme } from '@mui/material'
+import { Severity } from '../types'
+
+// Severity color mapping - consistent across all charts and components
+export const SEVERITY_COLORS: Record<Severity, string> = {
+  [Severity.DEBUG]: 'rgba(156, 39, 176, 0.8)',     // Purple
+  [Severity.INFO]: 'rgba(33, 150, 243, 0.8)',      // Blue
+  [Severity.WARNING]: 'rgba(255, 193, 7, 0.8)',    // Yellow/Amber
+  [Severity.ERROR]: 'rgba(244, 67, 54, 0.8)',      // Red
+  [Severity.CRITICAL]: 'rgba(183, 28, 28, 0.8)',   // Dark Red
+}
 
 /**
- * Common style constants to reduce repetition across components
+ * Get chip styling for severity badges
+ * @param severity - The severity level
+ * @returns SxProps for MUI Chip component
  */
+export const getSeverityChipStyle = (severity: Severity): SxProps<Theme> => ({
+  backgroundColor: SEVERITY_COLORS[severity],
+  color: '#fff',
+  fontWeight: 500,
+})
+
+/**
+ * Get chart colors based on severity labels
+ * @param labels - Array of severity labels from chart data
+ * @returns Array of colors matching the severity order
+ */
+export const getSeverityColors = (labels: string[]): string[] => {
+  return labels.map(label => {
+    const severity = label.toUpperCase() as Severity
+    return SEVERITY_COLORS[severity] || 'rgba(158, 158, 158, 0.8)' // Gray fallback
+  })
+}
 
 // Auth pages (Login/Register) styles
 export const authContainerBox: SxProps<Theme> = {

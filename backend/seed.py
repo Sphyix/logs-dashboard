@@ -86,7 +86,7 @@ def create_sample_user(db):
     return user
 
 
-def generate_logs(db, count=1000, days=30):
+def generate_logs(db, count=10000, days=30):
     """Generate sample log entries"""
     print(f"Generating {count} log entries over the last {days} days...")
 

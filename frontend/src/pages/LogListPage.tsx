@@ -27,14 +27,7 @@ import { Visibility, Download } from '@mui/icons-material'
 import { logsAPI } from '../services/api'
 import { Severity, type LogFilters } from '../types'
 import { format } from 'date-fns'
-
-const severityColors: Record<Severity, 'default' | 'primary' | 'warning' | 'error' | 'success'> = {
-  [Severity.DEBUG]: 'default',
-  [Severity.INFO]: 'primary',
-  [Severity.WARNING]: 'warning',
-  [Severity.ERROR]: 'error',
-  [Severity.CRITICAL]: 'error',
-}
+import { getSeverityChipStyle } from '../constants/styles'
 
 export default function LogListPage() {
   const navigate = useNavigate()
@@ -189,8 +182,8 @@ export default function LogListPage() {
                     <TableCell>
                       <Chip
                         label={log.severity}
-                        color={severityColors[log.severity]}
                         size="small"
+                        sx={getSeverityChipStyle(log.severity)}
                       />
                     </TableCell>
                     <TableCell>{log.source}</TableCell>

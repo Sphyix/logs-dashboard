@@ -127,7 +127,7 @@ def get_aggregated_data(
         ] if condition is not None]
     ).group_by(Log.severity).all()
 
-    by_severity = {str(sev): count for sev, count in severity_counts}
+    by_severity = {sev.value: count for sev, count in severity_counts}
 
     # Count by source
     source_counts = db.query(

@@ -17,12 +17,14 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Chip,
 } from '@mui/material'
 import { Edit, Delete, Save, Cancel } from '@mui/icons-material'
 import { logsAPI } from '../services/api'
 import { Severity } from '../types'
 import { useAuth } from '../context/AuthContext'
 import { format } from 'date-fns'
+import { getSeverityChipStyle } from '../constants/styles'
 
 export default function LogDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -199,7 +201,10 @@ export default function LogDetailPage() {
                 <Typography variant="subtitle2" color="text.secondary">
                   Severity
                 </Typography>
-                <Typography variant="body1">{log.severity}</Typography>
+                <Chip
+                  label={log.severity}
+                  sx={getSeverityChipStyle(log.severity)}
+                />
               </Box>
 
               <Box>

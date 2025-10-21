@@ -30,6 +30,7 @@ import { Line, Bar, Pie } from 'react-chartjs-2'
 import { analyticsAPI } from '../services/api'
 import { Severity } from '../types'
 import { format, subDays } from 'date-fns'
+import { getSeverityColors } from '../constants/styles'
 
 // Register ChartJS components
 ChartJS.register(
@@ -106,13 +107,7 @@ export default function DashboardPage() {
       {
         label: 'Count',
         data: distribution?.items.map(d => d.count) || [],
-        backgroundColor: [
-          'rgba(75, 192, 192, 0.8)',
-          'rgba(54, 162, 235, 0.8)',
-          'rgba(255, 206, 86, 0.8)',
-          'rgba(255, 99, 132, 0.8)',
-          'rgba(153, 102, 255, 0.8)',
-        ],
+        backgroundColor: getSeverityColors(distribution?.items.map(d => d.label) || []),
       },
     ],
   }
@@ -122,13 +117,7 @@ export default function DashboardPage() {
     datasets: [
       {
         data: distribution?.items.map(d => d.count) || [],
-        backgroundColor: [
-          'rgba(75, 192, 192, 0.8)',
-          'rgba(54, 162, 235, 0.8)',
-          'rgba(255, 206, 86, 0.8)',
-          'rgba(255, 99, 132, 0.8)',
-          'rgba(153, 102, 255, 0.8)',
-        ],
+        backgroundColor: getSeverityColors(distribution?.items.map(d => d.label) || []),
       },
     ],
   }
