@@ -4,7 +4,7 @@ A full-stack web application for managing and analyzing log data with real-time 
 
 ## Overview
 
-The Logs Dashboard is a comprehensive log management system that allows users to create, read, update, and delete log entries, as well as view powerful analytics and insights through interactive charts and dashboards. The application features JWT-based authentication with simple RBAC (authenticated vs guest users), full-text search, advanced filtering, and CSV export capabilities.
+The Logs Dashboard is a comprehensive log management system that allows users to create, read, update, and delete log entries, as well as view powerful analytics and insights through interactive charts and dashboards. The application features JWT-based authentication with simple RBAC (authenticated vs guest users), full-text search, and advanced filtering.
 
 ## Features
 
@@ -14,7 +14,6 @@ The Logs Dashboard is a comprehensive log management system that allows users to
   - Full-text search in log messages
   - Advanced filtering (severity, source, date range)
   - Sorting and pagination
-  - CSV export with filter support
 
 - **Analytics Dashboard**
   - Real-time statistics (total logs, errors, warnings)
@@ -32,7 +31,6 @@ The Logs Dashboard is a comprehensive log management system that allows users to
   - Protected routes for create/update/delete operations
 
 ### Bonus Features
-- CSV export functionality
 - Severity distribution histogram
 - Advanced full-text search (PostgreSQL pg_trgm)
 - Standalone database seeder tool
@@ -249,7 +247,6 @@ The API documentation is automatically generated and available at:
 - `POST /api/logs` - Create log (protected)
 - `PUT /api/logs/{id}` - Update log (protected)
 - `DELETE /api/logs/{id}` - Delete log (protected)
-- `GET /api/logs/export` - Export logs to CSV (public)
 
 #### Analytics
 - `GET /api/analytics/aggregated` - Get aggregated statistics (public)
@@ -381,27 +378,23 @@ ports:
 ### Database Connection Issues
 ```bash
 # Check PostgreSQL is running
-docker-compose logs postgres
+docker compose logs postgres
 
 # Reset database
-docker-compose down -v
-docker-compose up -d
+docker compose down -v
+docker compose up -d
 ```
 
 ### Frontend Not Loading
 ```bash
 # Rebuild frontend
-docker-compose build frontend
-docker-compose up -d frontend
+docker compose build frontend
+docker compose up -d frontend
 ```
 
 ## License
 
 MIT License - Feel free to use this project for learning and development.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
 

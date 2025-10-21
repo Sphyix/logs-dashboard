@@ -73,14 +73,6 @@ export const logsAPI = {
   delete: async (id: string) => {
     await api.delete(`/logs/${id}`)
   },
-
-  exportCSV: async (filters: LogFilters) => {
-    const response = await api.get('/logs/export', {
-      params: filters,
-      responseType: 'blob',
-    })
-    return response.data
-  },
 }
 
 // Analytics API

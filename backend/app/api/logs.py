@@ -1,10 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
-import csv
-import io
 import math
 
 from app.core.dependencies import get_db, require_user, get_current_user
@@ -65,58 +62,6 @@ def get_logs(
         page=page,
         page_size=page_size,
         total_pages=total_pages
-    )
-
-
-@router.get("/export")
-def export_logs_csv(
-    severity: Optional[SeverityEnum] = None,
-    source: Optional[str] = None,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
-    search: Optional[str] = None,
-    db: Session = Depends(get_db)
-):
-    """
-    Export logs to CSV file with optional filtering
-
-    **Public endpoint** - No authentication required
-    """
-    filter_params = LogFilter(
-        severity=severity,
-        source=source,
-        start_date=start_date,
-        end_date=end_date,
-        search=search,
-        page=1,
-        page_size=10000  # Export max 10k logs
-    )
-
-    logs, _ = log_crud.get_logs(db, filter_params)
-
-    # Create CSV in memory
-    output = io.StringIO()
-    writer = csv.writer(output)
-
-    # Write header
-    writer.writerow(['ID', 'Timestamp', 'Severity', 'Source', 'Message'])
-
-    # Write data
-    for log in logs:
-        writer.writerow([
-            str(log.id),
-            log.timestamp.isoformat(),
-            log.severity.value,
-            log.source,
-            log.message
-        ])
-
-    # Prepare response
-    output.seek(0)
-    return StreamingResponse(
-        iter([output.getvalue()]),
-        media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=logs_export_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"}
     )
 
 

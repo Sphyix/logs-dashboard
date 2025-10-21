@@ -18,12 +18,11 @@ import {
   InputLabel,
   Chip,
   Typography,
-  Button,
   IconButton,
   Alert,
   CircularProgress,
 } from '@mui/material'
-import { Visibility, Download } from '@mui/icons-material'
+import { Visibility } from '@mui/icons-material'
 import { logsAPI } from '../services/api'
 import { Severity, type LogFilters } from '../types'
 import { format } from 'date-fns'
@@ -59,38 +58,13 @@ export default function LogListPage() {
     }))
   }
 
-  const handleExportCSV = async () => {
-    try {
-      const blob = await logsAPI.exportCSV(filters)
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `logs_${new Date().toISOString()}.csv`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-    } catch (err) {
-      console.error('Export failed:', err)
-    }
-  }
-
   if (error) {
     return <Alert severity="error">Failed to load logs</Alert>
   }
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">Logs</Typography>
-        <Button
-          variant="outlined"
-          startIcon={<Download />}
-          onClick={handleExportCSV}
-        >
-          Export CSV
-        </Button>
-      </Box>
+      <Typography variant="h4" mb={3}>Logs</Typography>
 
       <Paper sx={{ p: 2, mb: 2 }}>
         <Box display="flex" gap={2} flexWrap="wrap">
