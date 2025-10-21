@@ -1,12 +1,11 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
 from typing import Optional, AsyncGenerator
 from datetime import datetime
 import asyncio
 import json
 
-from app.core.dependencies import get_db
+from app.database import SessionLocal
 from app.crud import log as log_crud
 from app.models.log import SeverityEnum
 from app.schemas.analytics import AggregatedData, TrendData, DistributionData, TrendDataPoint, DistributionItem
@@ -23,7 +22,6 @@ router = APIRouter(prefix="/sse", tags=["sse"])
 
 async def event_generator(
     data_fetcher,
-    db: Session,
     interval: int = 5
 ) -> AsyncGenerator[str, None]:
     """
@@ -31,13 +29,11 @@ async def event_generator(
 
     Args:
         data_fetcher: Function to fetch data
-        db: Database session
         interval: Update interval in seconds
     """
     try:
         while True:
-            # Fetch data
-            data = data_fetcher(db)
+            data = data_fetcher()
 
             # Format as SSE event
             yield f"data: {json.dumps(data, default=json_serializer)}\n\n"
@@ -55,8 +51,7 @@ async def stream_logs_count(
     source: Optional[str] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
-    interval: int = Query(5, ge=1, le=60, description="Update interval in seconds"),
-    db: Session = Depends(get_db)
+    interval: int = Query(5, ge=1, le=60, description="Update interval in seconds")
 ):
     """
     SSE endpoint that streams the count of logs matching filters
@@ -65,23 +60,27 @@ async def stream_logs_count(
 
     Sends updates every `interval` seconds with the current count
     """
-    def fetch_count(db_session: Session):
+    def fetch_count():
         from app.crud.log import get_logs
         from app.schemas.log import LogFilter
 
-        filter_params = LogFilter(
-            severity=severity,
-            source=source,
-            start_date=start_date,
-            end_date=end_date,
-            page=1,
-            page_size=1
-        )
-        _, total = get_logs(db_session, filter_params)
-        return {"count": total, "timestamp": datetime.utcnow().isoformat()}
+        db = SessionLocal()
+        try:
+            filter_params = LogFilter(
+                severity=severity,
+                source=source,
+                start_date=start_date,
+                end_date=end_date,
+                page=1,
+                page_size=1
+            )
+            _, total = get_logs(db, filter_params)
+            return {"count": total, "timestamp": datetime.utcnow().isoformat()}
+        finally:
+            db.close()
 
     return StreamingResponse(
-        event_generator(fetch_count, db, interval),
+        event_generator(fetch_count, interval),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -97,8 +96,7 @@ async def stream_aggregated_analytics(
     end_date: Optional[datetime] = None,
     severity: Optional[SeverityEnum] = None,
     source: Optional[str] = None,
-    interval: int = Query(5, ge=1, le=60, description="Update interval in seconds"),
-    db: Session = Depends(get_db)
+    interval: int = Query(5, ge=1, le=60, description="Update interval in seconds")
 ):
     """
     SSE endpoint that streams aggregated analytics data
@@ -107,20 +105,24 @@ async def stream_aggregated_analytics(
 
     Sends updates every `interval` seconds with current aggregated data
     """
-    def fetch_aggregated(db_session: Session):
-        data = log_crud.get_aggregated_data(
-            db_session,
-            start_date=start_date,
-            end_date=end_date,
-            severity=severity,
-            source=source
-        )
-        result = AggregatedData(**data).model_dump()
-        result["timestamp"] = datetime.utcnow().isoformat()
-        return result
+    def fetch_aggregated():
+        db = SessionLocal()
+        try:
+            data = log_crud.get_aggregated_data(
+                db,
+                start_date=start_date,
+                end_date=end_date,
+                severity=severity,
+                source=source
+            )
+            result = AggregatedData(**data).model_dump()
+            result["timestamp"] = datetime.utcnow().isoformat()
+            return result
+        finally:
+            db.close()
 
     return StreamingResponse(
-        event_generator(fetch_aggregated, db, interval),
+        event_generator(fetch_aggregated, interval),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -137,8 +139,7 @@ async def stream_trend_analytics(
     severity: Optional[SeverityEnum] = None,
     source: Optional[str] = None,
     trend_interval: str = Query("hour", description="Time interval: hour or day"),
-    update_interval: int = Query(5, ge=1, le=60, description="Update interval in seconds"),
-    db: Session = Depends(get_db)
+    update_interval: int = Query(5, ge=1, le=60, description="Update interval in seconds")
 ):
     """
     SSE endpoint that streams trend analytics data
@@ -147,22 +148,26 @@ async def stream_trend_analytics(
 
     Sends updates every `update_interval` seconds with current trend data
     """
-    def fetch_trend(db_session: Session):
-        data_points = log_crud.get_trend_data(
-            db_session,
-            start_date=start_date,
-            end_date=end_date,
-            severity=severity,
-            source=source,
-            interval=trend_interval
-        )
-        trend_points = [TrendDataPoint(**point) for point in data_points]
-        result = TrendData(data_points=trend_points).model_dump()
-        result["timestamp"] = datetime.utcnow().isoformat()
-        return result
+    def fetch_trend():
+        db = SessionLocal()
+        try:
+            data_points = log_crud.get_trend_data(
+                db,
+                start_date=start_date,
+                end_date=end_date,
+                severity=severity,
+                source=source,
+                interval=trend_interval
+            )
+            trend_points = [TrendDataPoint(**point) for point in data_points]
+            result = TrendData(data_points=trend_points).model_dump()
+            result["timestamp"] = datetime.utcnow().isoformat()
+            return result
+        finally:
+            db.close()
 
     return StreamingResponse(
-        event_generator(fetch_trend, db, update_interval),
+        event_generator(fetch_trend, update_interval),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -177,8 +182,7 @@ async def stream_distribution_analytics(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     source: Optional[str] = None,
-    interval: int = Query(5, ge=1, le=60, description="Update interval in seconds"),
-    db: Session = Depends(get_db)
+    interval: int = Query(5, ge=1, le=60, description="Update interval in seconds")
 ):
     """
     SSE endpoint that streams distribution analytics data
@@ -187,23 +191,27 @@ async def stream_distribution_analytics(
 
     Sends updates every `interval` seconds with current distribution data
     """
-    def fetch_distribution(db_session: Session):
-        aggregated = log_crud.get_aggregated_data(
-            db_session,
-            start_date=start_date,
-            end_date=end_date,
-            source=source
-        )
-        items = [
-            DistributionItem(label=severity, count=count)
-            for severity, count in aggregated["by_severity"].items()
-        ]
-        result = DistributionData(items=items).model_dump()
-        result["timestamp"] = datetime.utcnow().isoformat()
-        return result
+    def fetch_distribution():
+        db = SessionLocal()
+        try:
+            aggregated = log_crud.get_aggregated_data(
+                db,
+                start_date=start_date,
+                end_date=end_date,
+                source=source
+            )
+            items = [
+                DistributionItem(label=severity, count=count)
+                for severity, count in aggregated["by_severity"].items()
+            ]
+            result = DistributionData(items=items).model_dump()
+            result["timestamp"] = datetime.utcnow().isoformat()
+            return result
+        finally:
+            db.close()
 
     return StreamingResponse(
-        event_generator(fetch_distribution, db, interval),
+        event_generator(fetch_distribution, interval),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
