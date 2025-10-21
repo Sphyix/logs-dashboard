@@ -68,7 +68,7 @@ SOURCES = [
 
 def check_sample_user(db):
     """Check if sample user exists"""
-    return db.query(User).filter(User.email == "admin@example.com").first()
+    return db.query(User).filter(User.email == "admin@example.com").first() is not None
 
 
 def create_sample_user(db):
