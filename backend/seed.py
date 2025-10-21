@@ -3,7 +3,7 @@ Database seeding script
 Generates sample log data for testing and development
 """
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.database import SessionLocal, init_db
 from app.models.log import Log, SeverityEnum
 from app.models.user import User
@@ -86,24 +86,23 @@ def create_sample_user(db):
     return user
 
 
-def generate_logs(db, count=10000, days=30):
-    """Generate sample log entries"""
+def generate_logs(db, count=1000, days=30):
+    """Generate historical log entries spread over specified days"""
     print(f"Generating {count} log entries over the last {days} days...")
 
-    end_date = datetime.utcnow()
-    start_date = end_date - timedelta(days=days)
-
     logs_created = 0
+    end_date = datetime.now(timezone.utc)
+    start_date = end_date - timedelta(days=days)
 
     for _ in range(count):
         # Random timestamp within the date range
         random_seconds = random.randint(0, int((end_date - start_date).total_seconds()))
         timestamp = start_date + timedelta(seconds=random_seconds)
 
-        # Random severity (weighted towards INFO and WARNING)
+        # Random severity with weighted probabilities
         severity = random.choices(
             list(SeverityEnum),
-            weights=[10, 40, 30, 15, 5],  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+            weights=[10, 40, 20, 10, 5],  # DEBUG, INFO, WARNING, ERROR, CRITICAL
             k=1
         )[0]
 
@@ -121,10 +120,9 @@ def generate_logs(db, count=10000, days=30):
             source=source
         )
         db.add(log)
-
         logs_created += 1
 
-        # Commit in batches of 100
+        # Commit in batches of 100 for performance
         if logs_created % 100 == 0:
             db.commit()
             print(f"Created {logs_created}/{count} logs...")

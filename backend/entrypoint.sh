@@ -10,5 +10,8 @@ echo "PostgreSQL is ready!"
 echo "Seeding database..."
 python seed.py || echo "Database already seeded or seeding failed (continuing...)"
 
+echo "Starting continuous log generator in background..."
+python continuous_logger.py &
+
 echo "Starting application..."
 exec uvicorn app.main:app --host 0.0.0.0 --port 8000
