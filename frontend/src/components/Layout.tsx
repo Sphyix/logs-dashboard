@@ -17,7 +17,7 @@ import {
   AccountCircle,
 } from '@mui/icons-material'
 import { useAuth } from '../context/AuthContext'
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { getNavButtonStyle } from '../constants/styles'
 
 export default function Layout() {
@@ -25,6 +25,7 @@ export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const [isCopied, setIsCopied] = useState(false);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget)
@@ -39,6 +40,16 @@ export default function Layout() {
     navigate('/login')
     handleClose()
   }
+
+   const handleCopyClick = async () => {
+    try {
+      await navigator.clipboard.writeText('Bearer ' + localStorage.getItem('token'));
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -107,6 +118,8 @@ export default function Layout() {
                   {user?.email}
                 </MenuItem>
                 <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                <MenuItem onClick={handleCopyClick}>{isCopied ? 'Copied!' : 'Copy Bearer Token'}</MenuItem>
+                
               </Menu>
             </div>
           ) : (
