@@ -66,6 +66,10 @@ SOURCES = [
     "cache-service",
 ]
 
+def check_sample_user(db):
+    """Check if sample user exists"""
+    return db.query(User).filter(User.email == "admin@example.com").first()
+
 
 def create_sample_user(db):
     """Create a sample user for testing"""
@@ -136,6 +140,11 @@ def seed_database():
     """Main seeding function"""
     db = SessionLocal()
 
+    if check_sample_user(db):
+        print("Database already seeded. Exiting.")
+        db.close()
+        return
+    
     try:
         print("=== Starting Database Seeding ===")
         init_db()
