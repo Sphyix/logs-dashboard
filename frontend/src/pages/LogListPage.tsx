@@ -47,7 +47,7 @@ export default function LogListPage() {
   const [newLogsCount, setNewLogsCount] = useState(0)
   const [previousLogIds, setPreviousLogIds] = useState<Set<string>>(new Set())
   const [newLogIds, setNewLogIds] = useState<Set<string>>(new Set())
-  const [previousCount, setPreviousCount] = useState<number | null>(null)
+  const previousCountRef = useRef<number | null>(null)
 
   const { data, isLoading, error, refetch } = useQuery<LogListResponse>({
     queryKey: ['logs', filters],
@@ -106,6 +106,7 @@ export default function LogListPage() {
   useEffect(() => {
     if (sseCountData && filters.page === 1 && filters.sort_order === 'desc') {
       const currentCount = sseCountData.count
+      const previousCount = previousCountRef.current
 
       if (previousCount !== null && currentCount > previousCount) {
         const diff = currentCount - previousCount
@@ -120,7 +121,7 @@ export default function LogListPage() {
         }
       }
 
-      setPreviousCount(currentCount)
+      previousCountRef.current = currentCount
     }
   }, [sseCountData, refetch, filters.page, filters.sort_order])
 
@@ -145,7 +146,7 @@ export default function LogListPage() {
     setNewLogsCount(0)
     setPreviousLogIds(new Set())
     setNewLogIds(new Set())
-    setPreviousCount(null)
+    previousCountRef.current = null
   }
 
   const handlePageChange = (_: unknown, newPage: number) => {
@@ -153,7 +154,7 @@ export default function LogListPage() {
     setNewLogsCount(0)
     setPreviousLogIds(new Set())
     setNewLogIds(new Set())
-    setPreviousCount(null)
+    previousCountRef.current = null
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -166,14 +167,14 @@ export default function LogListPage() {
     setNewLogsCount(0)
     setPreviousLogIds(new Set())
     setNewLogIds(new Set())
-    setPreviousCount(null)
+    previousCountRef.current = null
   }
 
   const handleScrollToTop = () => {
     setNewLogsCount(0)
     setPreviousLogIds(new Set())
     setNewLogIds(new Set())
-    setPreviousCount(null)
+    previousCountRef.current = null
     refetch()
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
