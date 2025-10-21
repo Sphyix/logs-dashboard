@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
                 # Cleanup old logs every hour
                 if time.time() - last_cleared >= 3600:
-                    clear_old_logs(db, days=30)
+                    clear_old_logs(db, days=7)
                     last_cleared = time.time()
             except Exception as e:
                 print(f"Error generating log: {e}")

@@ -51,7 +51,7 @@ export default function DashboardPage() {
   const [filters, setFilters] = useState({
     severity: undefined as Severity | undefined,
     source: undefined as string | undefined,
-    start_date: format(subDays(new Date(), 7), "yyyy-MM-dd'T'HH:mm"),
+    start_date: format(subDays(new Date(), 4), "yyyy-MM-dd'T'HH:mm"),
     end_date: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
     interval: 'hour',
   })

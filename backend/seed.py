@@ -144,7 +144,7 @@ def seed_database():
         create_sample_user(db)
 
         # Generate sample logs
-        generate_logs(db, count=1000, days=30)
+        generate_logs(db, count=144000, days=5)
 
         print("=== Database Seeding Completed Successfully ===")
         print("\nSample credentials:")
