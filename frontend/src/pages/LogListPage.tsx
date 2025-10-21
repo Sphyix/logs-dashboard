@@ -45,43 +45,14 @@ export default function LogListPage() {
 
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [newLogsCount, setNewLogsCount] = useState(0)
-  const [previousCount, setPreviousCount] = useState<number | null>(null)
   const [previousLogIds, setPreviousLogIds] = useState<Set<string>>(new Set())
   const [newLogIds, setNewLogIds] = useState<Set<string>>(new Set())
+  const [previousCount, setPreviousCount] = useState<number | null>(null)
 
   const { data, isLoading, error, refetch } = useQuery<LogListResponse>({
     queryKey: ['logs', filters],
     queryFn: () => logsAPI.getList(filters),
   })
-
-  // Track new logs when data changes (for flash animation and count tracking)
-  useEffect(() => {
-    if (data && filters.page === 1 && filters.sort_order === 'desc') {
-      const currentIds = new Set(data.items.map(log => log.id))
-
-      // Find new log IDs for flash animation
-      const newIds = new Set<string>()
-      data.items.forEach(log => {
-        if (!previousLogIds.has(log.id)) {
-          newIds.add(log.id)
-        }
-      })
-
-      if (newIds.size > 0) {
-        setNewLogIds(newIds)
-
-        // Clear animation after 1 second
-        setTimeout(() => {
-          setNewLogIds(new Set())
-        }, 1000)
-      }
-
-      setPreviousLogIds(currentIds)
-
-      // Update previousCount to current total
-      setPreviousCount(data.total)
-    }
-  }, [data])
 
   // SSE connection for log count updates
   const { data: sseCountData } = useSSE<{ count: number }>({
@@ -95,12 +66,43 @@ export default function LogListPage() {
     enabled: true,
   })
 
+  // Track new logs when data changes (for flash animation only)
+  useEffect(() => {
+    if (data && filters.page === 1 && filters.sort_order === 'desc') {
+      const currentIds = new Set(data.items.map(log => log.id))
+
+      if (previousLogIds.size === 0) {
+        setPreviousLogIds(currentIds)
+        return
+      }
+
+      // Find new log IDs for flash animation
+      const newIds = new Set<string>()
+      data.items.forEach(log => {
+        if (!previousLogIds.has(log.id)) {
+          newIds.add(log.id)
+        }
+      })
+
+      if (newIds.size > 0) {
+        setNewLogIds(newIds)
+
+        // Clear animation after 2 seconds
+        setTimeout(() => {
+          setNewLogIds(new Set())
+        }, 2000)
+      }
+
+      setPreviousLogIds(currentIds)
+    }
+  }, [data, filters.page, filters.sort_order, previousLogIds])
+
   // Detect if user is at the top of the page
   const isAtTop = () => {
-    return window.scrollY < 100
+    return window.scrollY < 300
   }
 
-  // Handle SSE count updates
+  // Handle SSE count updates for badge
   useEffect(() => {
     if (sseCountData && filters.page === 1 && filters.sort_order === 'desc') {
       const currentCount = sseCountData.count
@@ -111,13 +113,16 @@ export default function LogListPage() {
         if (isAtTop()) {
           // At top: auto-refetch to show new logs
           refetch()
+          setNewLogsCount(0)
         } else {
           // Scrolled down: update badge with difference
           setNewLogsCount(prev => prev + diff)
         }
       }
+
+      setPreviousCount(currentCount)
     }
-  }, [sseCountData, refetch, previousCount, filters.page, filters.sort_order])
+  }, [sseCountData, refetch, filters.page, filters.sort_order])
 
   // Scroll detection for back-to-top button
   useEffect(() => {
@@ -140,6 +145,7 @@ export default function LogListPage() {
     setNewLogsCount(0)
     setPreviousLogIds(new Set())
     setNewLogIds(new Set())
+    setPreviousCount(null)
   }
 
   const handlePageChange = (_: unknown, newPage: number) => {
@@ -147,6 +153,7 @@ export default function LogListPage() {
     setNewLogsCount(0)
     setPreviousLogIds(new Set())
     setNewLogIds(new Set())
+    setPreviousCount(null)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -159,12 +166,14 @@ export default function LogListPage() {
     setNewLogsCount(0)
     setPreviousLogIds(new Set())
     setNewLogIds(new Set())
+    setPreviousCount(null)
   }
 
   const handleScrollToTop = () => {
     setNewLogsCount(0)
     setPreviousLogIds(new Set())
     setNewLogIds(new Set())
+    setPreviousCount(null)
     refetch()
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
