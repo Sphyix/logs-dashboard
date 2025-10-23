@@ -1,292 +1,194 @@
 # Logs Dashboard
 
-A full-stack web application for managing and analyzing log data with real-time analytics and visualizations.
+A log management system with real-time analytics. Think of it as a central place to collect, search, and analyze logs from your applications.
 
-## Overview
+## What it does
 
-The Logs Dashboard is a comprehensive log management system that allows users to create, read, update, and delete log entries, as well as view powerful analytics and insights through interactive charts and dashboards. The application features JWT-based authentication with simple RBAC (authenticated vs guest users), full-text search, and advanced filtering.
+Built this as a full-stack app for managing log entries. You can browse logs, search through them, filter by severity/source/date, and see analytics dashboards with charts showing trends and distributions. There's also real-time updates via SSE so you don't have to keep refreshing.
 
-## Features
+Authentication is pretty straightforward - logged-in users can create/edit/delete logs, while guests can view everything but can't modify anything.
 
-### Core Features
-- **Log Management (CRUD)**
-  - Create, read, update, and delete log entries
-  - Full-text search in log messages
-  - Advanced filtering (severity, source, date range)
-  - Sorting and pagination
+## Stack
 
-- **Analytics Dashboard**
-  - Real-time statistics (total logs, errors, warnings)
-  - Interactive charts:
-    - Line chart: Log count trend over time
-    - Bar chart: Severity distribution
-    - Pie chart: Severity distribution visualization
-  - Configurable time ranges and filters
+**Backend:**
+- FastAPI for the API (chose it for the auto-generated docs and speed)
+- PostgreSQL with the pg_trgm extension for fuzzy text search
+- SQLAlchemy 2.0 as ORM
+- JWT tokens for auth
 
-- **Authentication & Authorization**
-  - User registration and login (JWT-based)
-  - Simple RBAC:
-    - **Authenticated users**: Full CRUD access to logs
-    - **Guest users**: Read-only access to logs and analytics
-  - Protected routes for create/update/delete operations
+**Frontend:**
+- React 18 + TypeScript
+- Material-UI for components
+- TanStack Query for data fetching (honestly this made caching so much easier)
+- Chart.js for the graphs
+- Axios for API calls
 
-### Bonus Features
-- Severity distribution histogram
-- Advanced full-text search (PostgreSQL pg_trgm)
-- Standalone database seeder tool
-- Docker-ready with docker-compose
-- Auto-generated API documentation (Swagger/OpenAPI)
-- Responsive Material-UI interface
+**Deployment:**
+- Docker Compose setup included
+- Nginx serves the frontend
+- Uvicorn runs the backend
 
-## Tech Stack
+## Quick start
 
-### Backend
-- **FastAPI** - Modern, fast Python web framework
-- **SQLAlchemy 2.0** - SQL toolkit and ORM
-- **PostgreSQL 15** - Relational database
-- **Pydantic v2** - Data validation
-- **python-jose** - JWT tokens
-- **passlib** - Password hashing
+Easiest way is Docker:
 
-### Frontend
-- **React 18** - UI library
-- **TypeScript** - Type safety
-- **Vite** - Build tool
-- **Material-UI (MUI)** - Component library
-- **TanStack Query** - Data fetching and caching
-- **Chart.js** - Data visualization
-- **React Router** - Navigation
-- **Axios** - HTTP client
-
-### DevOps
-- **Docker & Docker Compose** - Containerization
-- **Nginx** - Web server (frontend)
-- **Uvicorn** - ASGI server (backend)
-
-## Project Structure
-
-```
-logs-dashboard/
-├── backend/                    # FastAPI backend
-│   ├── app/
-│   │   ├── api/               # API endpoints
-│   │   │   ├── auth.py        # Authentication endpoints
-│   │   │   ├── logs.py        # Log CRUD endpoints
-│   │   │   └── analytics.py   # Analytics endpoints
-│   │   ├── core/              # Core utilities
-│   │   │   ├── config.py      # Settings
-│   │   │   ├── security.py    # JWT & password hashing
-│   │   │   └── dependencies.py # FastAPI dependencies
-│   │   ├── models/            # SQLAlchemy models
-│   │   │   ├── user.py
-│   │   │   └── log.py
-│   │   ├── schemas/           # Pydantic schemas
-│   │   │   ├── user.py
-│   │   │   ├── log.py
-│   │   │   └── analytics.py
-│   │   ├── crud/              # Database operations
-│   │   │   ├── user.py
-│   │   │   └── log.py
-│   │   ├── database.py        # Database connection
-│   │   └── main.py            # FastAPI app
-│   ├── seed.py                # Database seeding script
-│   ├── requirements.txt
-│   └── Dockerfile
-├── frontend/                   # React frontend
-│   ├── src/
-│   │   ├── pages/             # Page components
-│   │   │   ├── LoginPage.tsx
-│   │   │   ├── RegisterPage.tsx
-│   │   │   ├── LogListPage.tsx
-│   │   │   ├── LogDetailPage.tsx
-│   │   │   ├── LogCreatePage.tsx
-│   │   │   └── DashboardPage.tsx
-│   │   ├── components/        # Shared components
-│   │   │   └── Layout.tsx
-│   │   ├── context/           # React context
-│   │   │   └── AuthContext.tsx
-│   │   ├── services/          # API client
-│   │   │   └── api.ts
-│   │   ├── types/             # TypeScript types
-│   │   │   └── index.ts
-│   │   ├── App.tsx
-│   │   └── main.tsx
-│   ├── package.json
-│   ├── nginx.conf
-│   └── Dockerfile
-├── tools/
-│   └── seeder/                # Standalone log generator
-│       ├── generate_logs.py
-│       ├── requirements.txt
-│       └── README.md
-├── docker-compose.yml
-└── README.md
-```
-
-## Quick Start with Docker
-
-### Prerequisites
-- Docker Desktop or Docker Engine with Docker Compose
-- Git
-
-### Setup and Run
-
-1. **Clone the repository**
 ```bash
+# Clone and start everything
 git clone <repository-url>
 cd logs-dashboard
+docker compose up -d
 ```
 
-2. **Start the application**
-```bash
-docker-compose up -d
-```
+Then visit:
+- http://localhost - main app
+- http://localhost:8000/docs - API documentation
 
-This will start:
-- PostgreSQL database (port 5432)
-- FastAPI backend (port 8000)
-- React frontend (port 80)
+Default login: `admin@example.com` / `password123`
 
-3. **Access the application**
-- Frontend: http://localhost
-- API Documentation: http://localhost:8000/docs
-- Alternative API Docs: http://localhost:8000/redoc
+The seed script creates 1000 sample logs spanning 30 days so you have data to play with. There's also a continuous logger service running in Docker that adds new logs every few seconds to simulate a real environment.
 
-4. **Default credentials** (created by seed script)
-```
-Email: admin@example.com
-Password: password123
-```
+## Development setup
 
-### Stop the application
-```bash
-docker compose down
-```
+### Backend
 
-### Stop and remove all data
-```bash
-docker compose down -v
-```
-
-## Development Setup
-
-### Backend Development
-
-1. **Navigate to backend directory**
 ```bash
 cd backend
-```
-
-2. **Create virtual environment**
-```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. **Install dependencies**
-```bash
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-```
 
-4. **Set up environment variables**
-```bash
+# Copy and edit .env file
 cp .env.example .env
-# Edit .env with your settings
-```
 
-5. **Initialize and seed the database**
-```bash
+# Initialize database and add sample data
 python seed.py
-```
 
-6. **Run the development server**
-```bash
+# Run dev server
 uvicorn app.main:app --reload --port 8000
 ```
 
-### Frontend Development
+### Frontend
 
-1. **Navigate to frontend directory**
 ```bash
 cd frontend
-```
-
-2. **Install dependencies**
-```bash
 npm install
+npm run dev  # Starts on http://localhost:5173
 ```
 
-3. **Run development server**
-```bash
-npm run dev
+## Features
+
+**Log Management:**
+- Full CRUD on log entries
+- Search with PostgreSQL fuzzy matching (handles typos pretty well)
+- Filter by severity, source, date range
+- Pagination (50 per page by default, max 100)
+
+**Analytics Dashboard:**
+- Live stats (total logs, error count, warning count)
+- Line chart showing log volume over time
+- Bar/pie charts for severity distribution
+- All the charts update in real-time via Server-Sent Events
+
+**Auth & Permissions:**
+- Register/login with JWT tokens (7 day expiry)
+- Authenticated users: full access
+- Guests: read-only (can browse and see analytics but can't modify)
+
+**Real-time Updates:**
+- SSE endpoints for live log counts and analytics
+- Configurable update interval (1-60 seconds)
+- Auto-reconnection if connection drops
+
+## Project structure
+
+```
+├── backend/
+│   ├── app/
+│   │   ├── api/              # Route handlers
+│   │   │   ├── auth.py       # Registration, login
+│   │   │   ├── logs.py       # Log CRUD
+│   │   │   ├── analytics.py  # Aggregated stats
+│   │   │   └── sse.py        # Real-time streaming
+│   │   ├── core/             # Config, security, dependencies
+│   │   ├── models/           # SQLAlchemy models
+│   │   ├── schemas/          # Pydantic validation
+│   │   ├── crud/             # Database operations
+│   │   └── main.py
+│   ├── seed.py               # Database initialization
+│   ├── continuous_logger.py  # Background log generator
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   │   ├── pages/            # Main route components
+│   │   ├── components/       # Shared UI components
+│   │   ├── context/          # Auth context
+│   │   ├── services/         # API client
+│   │   ├── hooks/            # useSSE for real-time data
+│   │   └── types/            # TypeScript interfaces
+│   └── package.json
+├── tools/seeder/             # Standalone log generator
+└── docker-compose.yml
 ```
 
-The frontend will be available at http://localhost:5173
+## API overview
 
-4. **Build for production**
-```bash
-npm run build
-```
+All endpoints are under `/api`. Full docs at http://localhost:8000/docs
 
-## API Documentation
+**Auth:**
+- `POST /api/auth/register` - Create account
+- `POST /api/auth/login` - Get JWT token
+- `GET /api/auth/me` - Get current user info (requires auth)
 
-The API documentation is automatically generated and available at:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+**Logs:**
+- `GET /api/logs` - List with filtering/pagination (public)
+- `GET /api/logs/{id}` - Single log (public)
+- `POST /api/logs` - Create (requires auth)
+- `PUT /api/logs/{id}` - Update (requires auth)
+- `DELETE /api/logs/{id}` - Delete (requires auth)
 
-### Key Endpoints
+**Analytics:**
+- `GET /api/analytics/aggregated` - Total/error/warning counts (public)
+- `GET /api/analytics/trend` - Time-series data (public)
+- `GET /api/analytics/distribution` - Severity breakdown (public)
 
-#### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login and get JWT token
-- `GET /api/auth/me` - Get current user (protected)
+**SSE (Real-time):**
+- `GET /api/sse/logs/count` - Live log count updates
+- `GET /api/sse/analytics/aggregated` - Live aggregated stats
+- `GET /api/sse/analytics/trend` - Live trend data
+- `GET /api/sse/analytics/distribution` - Live distribution data
 
-#### Logs
-- `GET /api/logs` - List logs (public, with pagination/filtering)
-- `GET /api/logs/{id}` - Get single log (public)
-- `POST /api/logs` - Create log (protected)
-- `PUT /api/logs/{id}` - Update log (protected)
-- `DELETE /api/logs/{id}` - Delete log (protected)
+All SSE endpoints take an `interval` param (seconds) plus the usual filters.
 
-#### Analytics
-- `GET /api/analytics/aggregated` - Get aggregated statistics (public)
-- `GET /api/analytics/trend` - Get time-series trend data (public)
-- `GET /api/analytics/distribution` - Get severity distribution (public)
+### Query params for logs
 
-### Query Parameters (Logs List)
+- `severity` - Filter by severity level
+- `source` - Filter by log source
+- `start_date`, `end_date` - Date range (ISO 8601)
+- `search` - Full-text search in messages
+- `sort_by` - timestamp/severity/source
+- `sort_order` - asc/desc
+- `page`, `page_size` - Pagination
 
-- `severity`: Filter by severity (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-- `source`: Filter by source
-- `start_date`: Filter logs after this date (ISO 8601)
-- `end_date`: Filter logs before this date (ISO 8601)
-- `search`: Full-text search in messages
-- `sort_by`: Sort field (timestamp, severity, source)
-- `sort_order`: Sort order (asc, desc)
-- `page`: Page number (default: 1)
-- `page_size`: Items per page (default: 50, max: 100)
+## Database
 
-## Database Schema
+**Users:**
+- UUID primary key
+- Email (unique, indexed)
+- Name (optional)
+- Bcrypt hashed password
 
-### Users Table
-- `id` (UUID, PK)
-- `email` (String, Unique)
-- `name` (String, Optional)
-- `hashed_password` (String)
-- `created_at` (DateTime)
-- `updated_at` (DateTime)
+**Logs:**
+- UUID primary key
+- Timestamp (indexed)
+- Message (text, GIN indexed for full-text search)
+- Severity enum: DEBUG/INFO/WARNING/ERROR/CRITICAL (indexed)
+- Source string (indexed)
 
-### Logs Table
-- `id` (UUID, PK)
-- `timestamp` (DateTime, Indexed)
-- `message` (Text, Full-text indexed)
-- `severity` (Enum: DEBUG, INFO, WARNING, ERROR, CRITICAL, Indexed)
-- `source` (String, Indexed)
-- `created_at` (DateTime)
-- `updated_at` (DateTime)
+The pg_trgm extension handles fuzzy matching so searches like "databse" will still find "database".
 
-## Standalone Seeder Tool
+## Standalone seeder
 
-Generate realistic log data independently:
+There's a separate tool for generating bulk logs if you need more test data:
 
 ```bash
 cd tools/seeder
@@ -295,107 +197,85 @@ pip install -r requirements.txt
 # Generate 5000 logs over 60 days
 python generate_logs.py --count 5000 --days 60
 
-# Use custom database URL
+# Custom database
 python generate_logs.py --count 1000 --db-url "postgresql://..."
 ```
 
-See `tools/seeder/README.md` for more details.
+## Docker notes
 
-## Design Decisions
-
-### Backend
-- **FastAPI**: Chosen for auto-generated documentation, async support, and modern Python features
-- **SQLAlchemy**: Industry-standard ORM with excellent PostgreSQL support
-- **JWT Authentication**: Stateless authentication suitable for REST APIs
-- **PostgreSQL pg_trgm**: Full-text search with fuzzy matching for log messages
-- **Pydantic v2**: Automatic request/response validation and OpenAPI schema generation
-
-### Frontend
-- **Material-UI**: Comprehensive component library with professional design
-- **TanStack Query**: Powerful data fetching with automatic caching and refetching
-- **TypeScript**: Type safety across the entire frontend
-- **Chart.js**: Popular, performant charting library with good React integration
-- **React Router**: Standard routing solution for React applications
-
-### Architecture
-- **Separation of Concerns**: Clear separation between API, business logic, and data layers
-- **RBAC Simplicity**: Simple authenticated vs guest model keeps permissions clear
-- **Public Analytics**: Analytics endpoints are public to allow anonymous monitoring
-- **Full-text Search**: PostgreSQL native full-text search for efficient message searching
-- **Pagination**: Cursor-based pagination prevents performance issues with large datasets
-
-## Environment Variables
-
-### Backend (.env)
-```
-DATABASE_URL=postgresql://user:pass@host:port/dbname
-SECRET_KEY=your-secret-key-here
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=10080
-API_V1_STR=/api
-PROJECT_NAME=Logs Dashboard API
-BACKEND_CORS_ORIGINS=["http://localhost", "http://localhost:5173"]
-```
-
-### Frontend
-Environment variables are configured in `vite.config.ts` and docker-compose.yml
-
-## Future Enhancements
-
-### Potential Features
-- Email notifications for critical errors
-- Webhook integrations
-- Advanced analytics (ML-based anomaly detection)
-- Log retention policies
-- Bulk operations (bulk delete, bulk edit)
-- Real-time log streaming (WebSockets)
-- Multi-tenancy support
-- Advanced RBAC with roles and permissions
-- Audit logging
-- Log aggregation from multiple sources
-
-### Technical Improvements
-- Performance monitoring and APM integration
-- Caching layer (Redis)
-- Rate limiting
-- API versioning
-- GraphQL alternative endpoint
-- Horizontal scaling setup
-- CDN integration for frontend assets
-
-## Troubleshooting
-
-### Port Already in Use
-If ports 80, 5432, or 8000 are already in use:
 ```bash
-# Edit docker-compose.yml and change port mappings
-ports:
-  - "8080:80"  # Change frontend port
-  - "5433:5432"  # Change postgres port
-  - "8001:8000"  # Change backend port
-```
+# Start everything
+docker compose up -d
 
-### Database Connection Issues
-```bash
-# Check PostgreSQL is running
-docker compose logs postgres
+# View logs
+docker compose logs -f backend
 
-# Reset database
+# Stop and clean up data
 docker compose down -v
+
+# Rebuild after changes
+docker compose build backend
 docker compose up -d
 ```
 
-### Frontend Not Loading
+Ports: 80 (frontend), 8000 (backend), 5432 (postgres). If you need to change them, edit the `docker-compose.yml`.
+
+## Some design choices
+
+- Went with FastAPI because the auto-generated OpenAPI docs are super useful, and it's fast
+- PostgreSQL pg_trgm extension for full-text search - works well and doesn't need Elasticsearch
+- Kept RBAC simple (authenticated vs guest) since complex permissions weren't needed
+- SSE instead of WebSockets for real-time updates - simpler to implement and one-way data is all we need
+- TanStack Query on frontend handles all the caching/refetching logic so components stay simple
+- Material-UI gave us a decent looking UI without much custom CSS
+
+## Future ideas
+
+Some features that could be added:
+
+- **Settings page**: Admin panel to enable/disable new registrations, manage users, configure retention policies
+- **API tokens**: Generate tokens for different apps/services to send logs programmatically instead of using user credentials
+- **Client SDKs**: Code examples and lightweight libraries for Python/Node/etc. to simplify sending logs to the API
+- **Multi-tenant support**: Separate logs per application with filtering, so you can run this for multiple projects and keep their logs isolated
+- **Scale optimizations**: Table partitioning, log archiving, and query optimizations for handling 250k+ logs efficiently
+
+Other potential additions: email alerts for critical errors, webhook integrations, retention policies with auto-cleanup, anomaly detection, export to S3/external storage.
+
+## Troubleshooting
+
+**Port conflicts:**
+Edit `docker-compose.yml` and change the port mappings if 80/8000/5432 are taken.
+
+**Database issues:**
 ```bash
-# Rebuild frontend
-docker compose build frontend
-docker compose up -d frontend
+docker compose logs postgres  # Check what's happening
+docker compose down -v         # Nuclear option - wipes data
+docker compose up -d
 ```
 
-## License
+**Frontend not loading:**
+```bash
+docker compose build frontend
+docker compose restart frontend
+```
 
-MIT License - Feel free to use this project for learning and development.
+**Full-text search slow:**
+Make sure the pg_trgm extension is installed. Docker handles this automatically via the postgres-setup service.
+
+## Environment variables
+
+Backend needs a `.env` file (see `.env.example`):
+
+```
+DATABASE_URL=postgresql://user:pass@localhost:5432/logs_dashboard
+SECRET_KEY=change-this-in-production
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=10080  # 7 days
+BACKEND_CORS_ORIGINS=["http://localhost:5173", "http://localhost"]
+```
+
+Frontend uses `VITE_API_URL` but defaults to `/api` which works with the nginx reverse proxy in Docker.
 
 ---
 
-Built with FastAPI, React, and PostgreSQL.
+MIT License. Feel free to use this however you want.

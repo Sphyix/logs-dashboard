@@ -41,6 +41,3 @@ coverage/
 
 # Misc
 *.tsbuildinfo
-
-# SSL Certificates (for local development)
-certs/
