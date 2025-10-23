@@ -90,7 +90,7 @@ def create_sample_user(db):
     return user
 
 
-def generate_logs(db, count=1000, days=30):
+def generate_logs(db, count=100000, days=5):
     """Generate historical log entries spread over specified days"""
     print(f"Generating {count} log entries over the last {days} days...")
 
@@ -153,7 +153,7 @@ def seed_database():
         create_sample_user(db)
 
         # Generate sample logs
-        generate_logs(db, count=144000, days=5)
+        generate_logs(db, count=100000, days=5)
 
         print("=== Database Seeding Completed Successfully ===")
         print("\nSample credentials:")
