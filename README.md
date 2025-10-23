@@ -17,9 +17,9 @@ Authentication is pretty straightforward - logged-in users can create/edit/delet
 - JWT tokens for auth
 
 **Frontend:**
-- React 18 + TypeScript
+- React 18
 - Material-UI for components
-- TanStack Query for data fetching (honestly this made caching so much easier)
+- TanStack Query for data fetching
 - Chart.js for the graphs
 - Axios for API calls
 
@@ -45,7 +45,10 @@ Then visit:
 
 Default login: `admin@example.com` / `password123`
 
-The seed script creates 1000 sample logs spanning 30 days so you have data to play with. There's also a continuous logger service running in Docker that adds new logs every few seconds to simulate a real environment.
+The seed script creates 100000 sample logs spanning 5 days so you have data to play with. There's also a continuous logger service running in Docker that adds a new log every few seconds to simulate a real environment.
+When using the continuous logger, logs that are older than 7 days will be deleted.
+
+The seeding and continuous logger tools are managed by the entrypoint.sh file, they can be disabled from there.
 
 ## Development setup
 
@@ -79,7 +82,7 @@ npm run dev  # Starts on http://localhost:5173
 
 **Log Management:**
 - Full CRUD on log entries
-- Search with PostgreSQL fuzzy matching (handles typos pretty well)
+- Search with PostgreSQL fuzzy matching
 - Filter by severity, source, date range
 - Pagination (50 per page by default, max 100)
 
@@ -98,37 +101,6 @@ npm run dev  # Starts on http://localhost:5173
 - SSE endpoints for live log counts and analytics
 - Configurable update interval (1-60 seconds)
 - Auto-reconnection if connection drops
-
-## Project structure
-
-```
-├── backend/
-│   ├── app/
-│   │   ├── api/              # Route handlers
-│   │   │   ├── auth.py       # Registration, login
-│   │   │   ├── logs.py       # Log CRUD
-│   │   │   ├── analytics.py  # Aggregated stats
-│   │   │   └── sse.py        # Real-time streaming
-│   │   ├── core/             # Config, security, dependencies
-│   │   ├── models/           # SQLAlchemy models
-│   │   ├── schemas/          # Pydantic validation
-│   │   ├── crud/             # Database operations
-│   │   └── main.py
-│   ├── seed.py               # Database initialization
-│   ├── continuous_logger.py  # Background log generator
-│   └── requirements.txt
-├── frontend/
-│   ├── src/
-│   │   ├── pages/            # Main route components
-│   │   ├── components/       # Shared UI components
-│   │   ├── context/          # Auth context
-│   │   ├── services/         # API client
-│   │   ├── hooks/            # useSSE for real-time data
-│   │   └── types/            # TypeScript interfaces
-│   └── package.json
-├── tools/seeder/             # Standalone log generator
-└── docker-compose.yml
-```
 
 ## API overview
 
@@ -186,36 +158,18 @@ All SSE endpoints take an `interval` param (seconds) plus the usual filters.
 
 The pg_trgm extension handles fuzzy matching so searches like "databse" will still find "database".
 
-## Standalone seeder
-
-There's a separate tool for generating bulk logs if you need more test data:
-
-```bash
-cd tools/seeder
-pip install -r requirements.txt
-
-# Generate 5000 logs over 60 days
-python generate_logs.py --count 5000 --days 60
-
-# Custom database
-python generate_logs.py --count 1000 --db-url "postgresql://..."
-```
-
 ## Docker notes
 
 ```bash
 # Start everything
 docker compose up -d
 
-# View logs
-docker compose logs -f backend
+# Start everything and rebuild
+docker compose up -d --build
 
 # Stop and clean up data
 docker compose down -v
 
-# Rebuild after changes
-docker compose build backend
-docker compose up -d
 ```
 
 Ports: 80 (frontend), 8000 (backend), 5432 (postgres). If you need to change them, edit the `docker-compose.yml`.
@@ -225,7 +179,7 @@ Ports: 80 (frontend), 8000 (backend), 5432 (postgres). If you need to change the
 - Went with FastAPI because the auto-generated OpenAPI docs are super useful, and it's fast
 - PostgreSQL pg_trgm extension for full-text search - works well and doesn't need Elasticsearch
 - Kept RBAC simple (authenticated vs guest) since complex permissions weren't needed
-- SSE instead of WebSockets for real-time updates - simpler to implement and one-way data is all we need
+- SSE instead of WebSockets for real-time updates - simpler to implement and data is needed only one way
 - TanStack Query on frontend handles all the caching/refetching logic so components stay simple
 - Material-UI gave us a decent looking UI without much custom CSS
 
@@ -239,7 +193,7 @@ Some features that could be added:
 - **Multi-tenant support**: Separate logs per application with filtering, so you can run this for multiple projects and keep their logs isolated
 - **Scale optimizations**: Table partitioning, log archiving, and query optimizations for handling 250k+ logs efficiently
 
-Other potential additions: email alerts for critical errors, webhook integrations, retention policies with auto-cleanup, anomaly detection, export to S3/external storage.
+Other potential additions: email alerts for critical errors, webhook integrations, retention policies with auto-cleanup, anomaly detection.
 
 ## Troubleshooting
 
@@ -260,21 +214,12 @@ docker compose restart frontend
 ```
 
 **Full-text search slow:**
-Make sure the pg_trgm extension is installed. Docker handles this automatically via the postgres-setup service.
+Make sure the pg_trgm extension is installed if using an external database.
+When using the included Docker script, it is handled automatically via the postgres-setup service.
 
 ## Environment variables
 
 Backend needs a `.env` file (see `.env.example`):
-
-```
-DATABASE_URL=postgresql://user:pass@localhost:5432/logs_dashboard
-SECRET_KEY=change-this-in-production
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=10080  # 7 days
-BACKEND_CORS_ORIGINS=["http://localhost:5173", "http://localhost"]
-```
-
-Frontend uses `VITE_API_URL` but defaults to `/api` which works with the nginx reverse proxy in Docker.
 
 ---
 
