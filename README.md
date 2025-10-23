@@ -220,7 +220,7 @@ When using the included Docker script, it is handled automatically via the postg
 ## Environment variables
 
 Backend needs a `.env` file (see `.env.example`):
-
+Frontend uses `VITE_API_URL` but defaults to `/api` 
 ---
 
 MIT License. Feel free to use this however you want.
