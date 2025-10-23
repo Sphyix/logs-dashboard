@@ -92,7 +92,7 @@ def generate_single_log(db):
     db.commit()
 
 
-def clear_old_logs(db, days=30):
+def clear_old_logs(db, days=7):
     """Clear logs older than specified days"""
     cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
     deleted = db.query(Log).filter(Log.timestamp < cutoff_date).delete()
