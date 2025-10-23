@@ -34,7 +34,7 @@ Easiest way is Docker:
 
 ```bash
 # Clone and start everything
-git clone <repository-url>
+git clone https://github.com/Sphyix/logs-dashboard
 cd logs-dashboard
 docker compose up -d
 ```
