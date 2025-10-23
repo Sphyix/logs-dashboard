@@ -31,13 +31,5 @@ Thumbs.db
 *.seed
 *.pid.lock
 
-# Prisma
-backend/prisma/migrations/*_*
-!backend/prisma/migrations/.gitkeep
-
-# Testing
-coverage/
-.nyc_output/
-
 # Misc
 *.tsbuildinfo

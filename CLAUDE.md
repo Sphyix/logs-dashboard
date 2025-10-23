@@ -127,7 +127,7 @@ The backend follows a layered architecture: API routes → dependencies/auth →
 
 **Database Initialization**: The `init_db()` function in `app/database.py` creates all tables using SQLAlchemy metadata. This is called by the seed script. The Docker setup includes a `postgres-setup` service that automatically installs the pg_trgm extension via `backend/db/setup/setup.sql` before the backend starts.
 
-**Docker Entrypoint**: The `entrypoint.sh` script orchestrates startup: waits for PostgreSQL, runs the seed script, starts the continuous logger in the background, then launches the FastAPI server.
+**Docker Entrypoint**: The `entrypoint.sh` script orchestrates startup: waits for PostgreSQL, runs the seed script (100k logs over 5 days), starts the continuous logger in the background (new log every 1-5s, cleanup every hour for logs >30 days old), then launches the FastAPI server. Both the seeder and continuous logger can be disabled by commenting them out in `entrypoint.sh`.
 
 ### Frontend Structure
 
@@ -221,18 +221,22 @@ Logs support fuzzy full-text search via PostgreSQL pg_trgm extension. The `idx_l
 
 `backend/seed.py` creates:
 - Admin user: admin@example.com / password123
-- 1000 sample logs spanning 30 days with realistic messages
-- Weighted severity distribution (40% INFO, 30% WARNING, 15% ERROR, etc.)
+- 100,000 sample logs spanning 5 days with realistic messages
+- Weighted severity distribution (40% INFO, 20% WARNING, 10% ERROR, 5% CRITICAL, 10% DEBUG)
 
 The seed script calls `init_db()` from `app.database` to ensure tables exist before seeding. Run with: `python seed.py`. In Docker, this runs automatically via `entrypoint.sh`.
+
+**Configuring seed data**: Edit the `generate_logs()` call in `seed.py` to change the count and date range (default: 100000 logs over 5 days).
 
 ### Continuous Log Generation
 
 `backend/continuous_logger.py` runs as a background service in Docker:
 - Generates new log entries every 1-5 seconds with random severity and realistic messages
-- Automatically cleans up logs older than a configured retention period (hourly cleanup)
+- Automatically cleans up logs older than 7 days (hourly cleanup, configurable via `clear_old_logs()` days parameter)
 - Provides realistic data for testing real-time features and SSE endpoints
 - Started automatically in Docker via `entrypoint.sh` (runs in background before FastAPI starts)
+
+**Disabling seeding/continuous logger**: Comment out the relevant lines in `backend/entrypoint.sh` to disable seeding or the continuous logger in Docker deployments.
 
 ## Environment Configuration
 
@@ -263,7 +267,7 @@ Docker Compose sets these automatically for containerized deployment.
 2. Update seed script if needed
 3. Re-initialize database by running `python seed.py` (this will recreate tables)
 
-For Docker: restart services with `docker-compose down -v && docker-compose up -d` to recreate the database with the new schema.
+For Docker: restart services with `docker compose down -v && docker compose up -d` to recreate the database with the new schema.
 
 ### Adding Authentication to a Route
 
@@ -324,6 +328,18 @@ const { data, isConnected, error } = useSSE<YourDataType>({
   onError: (err) => console.error('SSE error:', err),
 });
 ```
+
+## Future Feature Ideas
+
+The README.md documents planned features that could be added:
+
+- **Settings page**: Admin panel to enable/disable new registrations, manage users, configure retention policies
+- **API tokens**: Generate tokens for different apps/services to send logs programmatically instead of using user credentials
+- **Client SDKs**: Code examples and lightweight libraries for Python/Node/etc. to simplify sending logs to the API
+- **Multi-tenant support**: Separate logs per application with filtering, so you can run this for multiple projects and keep their logs isolated
+- **Scale optimizations**: Table partitioning, log archiving, and query optimizations for handling 250k+ logs efficiently
+
+Additional potential features: email alerts for critical errors, webhook integrations, retention policies with auto-cleanup, anomaly detection.
 
 ## Troubleshooting
 
